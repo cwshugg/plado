@@ -1,0 +1,10 @@
+# python compilation
+__pycache__
+*.pyc
+
+# vim swapfiles
+*.swp
+
+# my personal files
+cwshugg*
+
