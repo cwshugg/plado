@@ -133,6 +133,8 @@ def ado_project_get_repos(proj):
     cg = ado_client_git()
     try:
         repos = cg.get_repositories(proj.id)
+        dbg_print("ado", "Found %d repositories in project %s%s%s." %
+                  (len(repos), color("project"), proj.name, color("none")))
         return repos
     except Exception as e:
         panic("Failed to retrieve repositories from project %s%s%s." %
@@ -145,6 +147,8 @@ def ado_repo_get_branches(proj, repo):
     cg = ado_client_git()
     try:
         branches = cg.get_branches(repo.id, project=proj.id)
+        dbg_print("ado", "Found %d branches in repository %s%s%s." %
+                  (len(branches), color("repo"), repo.name, color("none")))
         return branches
     except Exception as e:
         panic("Failed to retrieve branches from repo %s%s%s." %
@@ -159,6 +163,8 @@ def ado_repo_get_pullreqs(proj, repo):
     try:
         search_criteria = None
         prs = cg.get_pull_requests(repo.id, search_criteria, project=proj.id)
+        dbg_print("ado", "Found %d pull requests in repository %s%s%s." %
+                  (len(prs), color("repo"), repo.name, color("none")))
         return prs
     except Exception as e:
         panic("Failed to retrieve pull requests from repo %s%s%s." %
