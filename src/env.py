@@ -70,11 +70,11 @@ env_vars = {
     # DEBUGGING ENVIRONMENT VARIABLES
     env_prefix + "DEBUG_CONFIG": EnvironmentVariable_Bool(
         env_prefix + "DEBUG_CONFIG",
-        description="Enables debug prints for configuration file code."
+        description="Set to 1 to enable debug prints for configuration file code."
     ),
     env_prefix + "DEBUG_ADO": EnvironmentVariable_Bool(
         env_prefix + "DEBUG_ADO",
-        description="Enables debug prints for Azure DevOps communication code."
+        description="Set to 1 to enable debug prints for Azure DevOps interaction code."
     )
 }
 

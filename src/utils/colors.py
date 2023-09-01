@@ -130,6 +130,10 @@ colors = {
     "project":              color_rgb(115, 115, 225),
     "repo":                 color_rgb(255, 140, 50),
     "branch":               color_rgb(225, 210, 200),
+    "pullreq_id":           color_rgb(175, 225, 225),
+    "pullreq_owner":        "\033[0m",
+    "pullreq_branch_src":   color_rgb(150, 135, 125),
+    "pullreq_branch_dst":   color_rgb(135, 150, 125),
     "url":                  color_rgb(200, 200, 255)
 }
 

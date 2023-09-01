@@ -139,8 +139,10 @@ def help_check():
     """
     if "show_config" in args and args["show_config"]:
         help_show_config()
+        sys.exit(0)
     if "show_env" in args and args["show_env"]:
         help_show_env()
+        sys.exit(0)
                 
 
 # ============================ Main Functionality ============================ #
@@ -242,12 +244,13 @@ def main():
     if "show_branches" in args and args["show_branches"]:
         check_project(project)
         check_repo(repo)
-        ado_list_repo_branches(project, repo)
+        ado_list_branches(project, repo)
         return 0
     if "show_pullreqs" in args and args["show_pullreqs"]:
         check_project(project)
         check_repo(repo)
-        # TODO - list PRs
+        ado_list_pullreqs(project, repo)
+        return 0
 
     # print out the project/repo/branch/etc. that was specified, if possible
     # (list all projects by default if nothing is specified)

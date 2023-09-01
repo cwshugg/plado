@@ -148,7 +148,21 @@ def ado_repo_get_branches(proj, repo):
         return branches
     except Exception as e:
         panic("Failed to retrieve branches from repo %s%s%s." %
-              (color("repo"), repo.name, color("none")))
+              (color("repo"), repo.name, color("none")), exception=e)
+
+
+def ado_repo_get_pullreqs(proj, repo):
+    """
+    Takes in a project and repo and returns a list of all pull requests.
+    """
+    cg = ado_client_git()
+    try:
+        search_criteria = None
+        prs = cg.get_pull_requests(repo.id, search_criteria, project=proj.id)
+        return prs
+    except Exception as e:
+        panic("Failed to retrieve pull requests from repo %s%s%s." %
+              (color("repo"), repo.name, color("none")), exception=e)
 
 
 # ================================= Features ================================= #
@@ -260,7 +274,7 @@ def ado_show_repo(proj, repo):
           (color("gray"), color("none"),
            color("url"), repo.remote_url, color("none")))
 
-def ado_list_repo_branches(proj, repo):
+def ado_list_branches(proj, repo):
     """
     Shows a given repository's list of branches.
     """
@@ -296,10 +310,12 @@ def ado_show_branch(proj, repo, branch):
            color("branch"), branch.name, color("none")))
     
     # print the ahead/behind states
+    behind_color = color("red") if branch.behind_count > 0 else color("none")
+    ahead_color = color("green") if branch.ahead_count > 0 else color("none")
     print("%sCommits:%s %s%d%s behind, %s%d%s ahead, of %s%s%s" %
           (color("gray"), color("none"),
-           color("red"), branch.behind_count, color("none"),
-           color("green"), branch.ahead_count, color("none"),
+           behind_color, branch.behind_count, color("none"),
+           ahead_color, branch.ahead_count, color("none"),
            color("branch"), repo.default_branch, color("none")))
 
     # print the latest commit
@@ -316,4 +332,22 @@ def ado_show_branch(proj, repo, branch):
     print("%sLatest Commit - Comment:%s %s%s%s" %
           (color("gray"), color("none"),
            color("none"), commit.comment, color("none")))
+
+def ado_list_pullreqs(proj, repo):
+    """
+    Lists the given repository's pull requests.
+    """
+    prs = ado_repo_get_pullreqs(proj, repo)
+    prs_len = len(prs)
+    print("Found %d pull request%s:" % (prs_len, "" if prs_len == 1 else "s"))
+    
+    # iterate through all branches
+    for pr in prs:
+        print("%s%s%s%s - %s%s%s (%s%s%s --> %s%s%s)" %
+              (str_tab(bullet=bullet_char),
+              color("pullreq_id"), str(pr.code_review_id), color("none"),
+              color("pullreq_owner"), pr.created_by.unique_name, color("none"),
+              color("pullreq_branch_src"), pr.source_ref_name, color("gray"),
+              color("pullreq_branch_dst"), pr.target_ref_name, color("none")))
+        
 

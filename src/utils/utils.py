@@ -16,6 +16,9 @@ if srcdir not in sys.path:
 # Library imports
 from utils.colors import *
 
+# ADO imports
+from azure.devops.exceptions import AzureDevOpsServiceError
+
 # Globals
 bullet_char = "•"
 
@@ -29,11 +32,16 @@ def panic(msg: str, exception=None):
     pfx = "%s!%s" % (color("red"), color("none"))
     sys.stderr.write("%s %s\n" % (pfx, msg))
     if exception is not None:
-        # get the traceback and print each line
-        tb = traceback.format_exc()
-        for line in tb.split("\n"):
-            if len(line) > 0:
-                sys.stderr.write("%s %s%s%s\n" % (pfx, color("gray"), line, color("none")))
+        # if the exception is an Azure DevOps Serivce Error, we'll treat it
+        # differently here
+        if type(exception) == AzureDevOpsServiceError:
+            sys.stderr.write("%s Azure DevOps says: \"%s\"\n" % (pfx, exception))
+        else:
+            # get the traceback and print each line
+            tb = traceback.format_exc()
+            for line in tb.split("\n"):
+                if len(line) > 0:
+                    sys.stderr.write("%s %s%s%s\n" % (pfx, color("gray"), line, color("none")))
     sys.exit(1)
 
 
