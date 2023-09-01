@@ -60,6 +60,17 @@ The program will be made up of multiple parts:
 * Work Item information (boards)
     * Show all work items assigned to a user
 
+* Callbacks/Jobs for certain events - Give users the ability to have this
+  program run in a daemon-like mode that monitors for events such as:
+    * New PR created in repo
+    * New work item created
+    * User assigned to PR reviewers
+    * Work item assigned to user
+    * etc.
+    * Then, the program fires off a user-defined script/shell arguments,
+      passing it some information to do with it what it pleases. This would
+      be awesome for automation purposes.
+
 * All things list-able will be filterable by regex
 
 ### Extra Features

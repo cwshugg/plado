@@ -109,13 +109,46 @@ def ado_find_repo(proj, txt: str):
               (color("repo"), txt, color("none"),
                color("project"), proj.name, color("none")), exception=e)
 
+def ado_find_branch(proj, repo, txt: str):
+    """
+    Takes in a project and repository, and uses the given string to search for a
+    branch inside the repository.
+    """
+    cg = ado_client_git()
+    try:
+        dbg_print("ado", "Searching for branch: \"%s\"." % txt)
+        branch = cg.get_branch(repo.id, txt, project=proj.id)
+        dbg_print("ado", "Found branch with name \"%s%s%s\"." %
+                  (color("branch"), branch.name, color("none")))
+        return branch
+    except Exception as e:
+        panic("Failed to retrieve the branch \"%s%s%s\" from repository %s%s%s." %
+              (color("branch"), txt, color("none"),
+               color("repo"), repo.name, color("none")), exception=e)
+
 def ado_project_get_repos(proj):
     """
     Takes in a project and returns a list of all repositories within it.
     """
     cg = ado_client_git()
-    repos = cg.get_repositories(proj.id)
-    return repos
+    try:
+        repos = cg.get_repositories(proj.id)
+        return repos
+    except Exception as e:
+        panic("Failed to retrieve repositories from project %s%s%s." %
+              (color("project"), proj.name, color("none")))
+
+def ado_repo_get_branches(proj, repo):
+    """
+    Takes in a project and repo and returns a list of all branches.
+    """
+    cg = ado_client_git()
+    try:
+        branches = cg.get_branches(repo.id, project=proj.id)
+        return branches
+    except Exception as e:
+        panic("Failed to retrieve branches from repo %s%s%s." %
+              (color("repo"), repo.name, color("none")))
 
 
 # ================================= Features ================================= #
@@ -133,7 +166,7 @@ def ado_list_projects():
         print("No projects were found.")
         return
     
-    print("Found %d project%s:" % (projects_len, "s" if projects_len > 1 else ""))
+    print("Found %d project%s:" % (projects_len, "" if projects_len == 1 else "s"))
     for proj in projects:
         # get a shortened description of the project
         desc = proj.description
@@ -148,18 +181,10 @@ def ado_list_projects():
                color("project"), proj.name, color("none"),
                desc))
 
-def ado_show_project(value: any):
+def ado_show_project(proj):
     """
-    Takes in either a string (project name or ID) or a project object, and
-    displays information about it.
+    Takes in a project oject and displays information about it.
     """
-    cc = ado_client_core()
-    proj = value
-    if type(value) == str:
-        proj = cc.get_project(name)
-        dbg_print("ado", "Loaded project \"%s\"." % proj.name)
-
-    
     # print project name, ID, and revision
     print("%sProject:%s %s%s%s" %
           (color("gray"), color("none"),
@@ -192,23 +217,17 @@ def ado_list_repos(proj):
         return
     
     # list all repositories in a bulleted list
-    print("Found %d repositor%s:" % (repos_len, "ies" if repos_len > 1 else "y"))
+    print("Found %d repositor%s:" % (repos_len, "y" if repos_len == 1 else "ies"))
     for repo in repos:
         print("%s%s%s%s - %s%s%s" %
               (str_tab(bullet=bullet_char),
               color("repo"), repo.name, color("none"),
-              color("dkgray"), repo.web_url, color("none")))
+              color("url"), repo.web_url, color("none")))
 
-def ado_show_repo(proj, value: any):
+def ado_show_repo(proj, repo):
     """
-    Takes in a project and repository object OR name/ID string, and displays
-    information about the repository.
+    Takes in a project and repository and displays information about the repo.
     """
-    repo = value
-    if type(value) == str:
-        repo = ado_find_repo(value)
-        dbg_print("ado", "Found repository \"%s\"." % repo.name)
-    
     # print repo name and add a note if it's disabled
     print("%sRepository:%s %s%s%s" %
           (color("gray"), color("none"),
@@ -230,14 +249,71 @@ def ado_show_repo(proj, value: any):
            color("none"), str_file_size(repo.size), color("none")))
     print("%sWeb URL:%s %s%s%s" %
           (color("gray"), color("none"),
-           color("dkgray"), repo.web_url, color("none")))
+           color("url"), repo.web_url, color("none")))
     print("%sSSH URL:%s %s%s%s" %
           (color("gray"), color("none"),
-           color("dkgray"), repo.ssh_url, color("none")))
+           color("url"), repo.ssh_url, color("none")))
     print("%sAPI URL:%s %s%s%s" %
           (color("gray"), color("none"),
-           color("dkgray"), repo.url, color("none")))
+           color("url"), repo.url, color("none")))
     print("%sRemote URL:%s %s%s%s" %
           (color("gray"), color("none"),
-           color("dkgray"), repo.remote_url, color("none")))
+           color("url"), repo.remote_url, color("none")))
+
+def ado_list_repo_branches(proj, repo):
+    """
+    Shows a given repository's list of branches.
+    """
+    branches = ado_repo_get_branches(proj, repo)
+    branches_len = len(branches)
+    print("Found %d branch%s:" % (branches_len, "" if branches_len == 1 else "es"))
+    
+    # iterate through all branches
+    for branch in branches:
+        print("%s%s%s%s" %
+              (str_tab(bullet=bullet_char),
+              color("branch"), branch.name, color("none")), end="")
+        
+        # if the branch is behind, add to the line
+        if branch.behind_count > 0:
+            print(" (%s-%d%s)" %
+                  (color("red"), branch.behind_count, color("none")), end="")
+
+        # if the branch is ahead, add to the line
+        if branch.ahead_count > 0:
+            print(" (%s+%d%s)" %
+                  (color("green"), branch.ahead_count, color("none")), end="")
+
+        # end the line
+        print("")
+
+def ado_show_branch(proj, repo, branch):
+    """
+    Shows a given branch's information.
+    """
+    print("%sBranch:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("branch"), branch.name, color("none")))
+    
+    # print the ahead/behind states
+    print("%sCommits:%s %s%d%s behind, %s%d%s ahead, of %s%s%s" %
+          (color("gray"), color("none"),
+           color("red"), branch.behind_count, color("none"),
+           color("green"), branch.ahead_count, color("none"),
+           color("branch"), repo.default_branch, color("none")))
+
+    # print the latest commit
+    commit = branch.commit
+    print("%sLatest Commit - ID:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color(commit.commit_id), commit.commit_id, color("none")))
+    print("%sLatest Commit - Author Name:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("none"), commit.author.name, color("none")))
+    print("%sLatest Commit - Author Email:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("none"), commit.author.email, color("none")))
+    print("%sLatest Commit - Comment:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("none"), commit.comment, color("none")))
 

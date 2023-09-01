@@ -128,7 +128,9 @@ colors = {
     "env_name":             color_rgb(150, 255, 255),
     "dbg":                  color_rgb(125, 100, 150),
     "project":              color_rgb(115, 115, 225),
-    "repo":                 color_rgb(255, 140, 50)
+    "repo":                 color_rgb(255, 140, 50),
+    "branch":               color_rgb(225, 210, 200),
+    "url":                  color_rgb(200, 200, 255)
 }
 
 

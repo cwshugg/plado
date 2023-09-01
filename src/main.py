@@ -52,6 +52,9 @@ def args_init():
     p.add_argument("-r", "--repo",
                    help="Sets the ADO project repository to interact with. Can be a name or ID.",
                    type=str, default=None, required=False, metavar="REPO_NAME_OR_ID")
+    p.add_argument("-b", "--branch",
+                   help="Sets the ADO repository branch to interact with.",
+                   type=str, default=None, required=False, metavar="REPO_NAME")
 
     # ADO routine arguments
     p.add_argument("--show-projects",
@@ -59,6 +62,12 @@ def args_init():
                    default=False, action="store_true")
     p.add_argument("--show-repos",
                    help="Lists all repositories within the specified project.",
+                   default=False, action="store_true")
+    p.add_argument("--show-branches",
+                   help="Lists all branches in the specified repository.",
+                   default=False, action="store_true")
+    p.add_argument("--show-pullreqs",
+                   help="Lists all Pull Requests in the specified repository.",
                    default=False, action="store_true")
     
     # helper arguments
@@ -135,6 +144,22 @@ def help_check():
                 
 
 # ============================ Main Functionality ============================ #
+def check_project(proj: any):
+    """
+    Takes in an object and does some basic checks so verify it's an ADO project
+    object. Panics if it is not.
+    """
+    if proj is None:
+        panic("You must specify a project name or ID via --project.")
+
+def check_repo(repo: any):
+    """
+    Takes in an object and does some basic checks so verify it's an ADO repo
+    object. Panics if it is not.
+    """
+    if repo is None:
+        panic("You must specify a repository name or ID via --repo.")
+
 def main():
     """
     Main function for the entire program.
@@ -198,24 +223,37 @@ def main():
         project = ado_find_project(args["project"])
     repo = None
     if "repo" in args and args["repo"] is not None:
-        if project is None:
-            return panic("You must specify a project name or ID via --project.")
+        check_project(project)
         repo = ado_find_repo(project, args["repo"])
-
+    branch = None
+    if "branch" in args and args["branch"] is not None:
+        check_project(project)
+        check_repo(repo)
+        branch = ado_find_branch(project, repo, args["branch"])
     
     # ------------------------------- Routines ------------------------------- #
     if "show_projects" in args and args["show_projects"]:
         ado_list_projects()
         return 0
     if "show_repos" in args and args["show_repos"]:
-        if project is None:
-            return panic("You must specify a project name or ID via --project.")
+        check_project(project)
         ado_list_repos(project)
         return 0
+    if "show_branches" in args and args["show_branches"]:
+        check_project(project)
+        check_repo(repo)
+        ado_list_repo_branches(project, repo)
+        return 0
+    if "show_pullreqs" in args and args["show_pullreqs"]:
+        check_project(project)
+        check_repo(repo)
+        # TODO - list PRs
 
-    # print out the repository, project, etc., by default, if one is specified
+    # print out the project/repo/branch/etc. that was specified, if possible
     # (list all projects by default if nothing is specified)
-    if repo is not None:
+    if branch is not None:
+        ado_show_branch(project, repo, branch)
+    elif repo is not None:
         ado_show_repo(project, repo)
     elif project is not None:
         ado_show_project(project)
