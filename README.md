@@ -70,15 +70,26 @@ The program will be made up of multiple parts:
     * Then, the program fires off a user-defined script/shell arguments,
       passing it some information to do with it what it pleases. This would
       be awesome for automation purposes.
+    * Examples for why this may be useful:
+        * Every time a specific user creates a PR, you want to run a script that
+          clones the repo, checks out the branch, and does some work.
+        * Every time a work item is created under a specific group, run a script
+          that searches it for keywords and asign it to a certain person.
+        * Every time a pipeline is started, write it to a log file.
 
 * All things list-able will be filterable by regex
+
+#### Command-Line Options
+
+* `--format` - This sets the output format for any given object being dumped
+  to the terminal. Options are:
+    * `pretty` - The default option, which uses colors and nice formatting to
+      show the information in a pleasant way
+    * `json` - Outputs *only* JSON, so it can be easily parsed by a machine.
 
 ### Extra Features
 
 Some extra ideas for features once the important stuff is done.
 
-* `--show-config` - This argument will list all possible config fields, their
-  descriptions, the acceptable types, whether or not it's required, etc.
-* `--show-env` - This argument will list all possible environment variables accepted
-  by the tool.
+* TODO
 
