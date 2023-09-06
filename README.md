@@ -4,51 +4,40 @@ This contains code involving my idea for writing a command-line application that
 interacts with the Azure DevOps API, using the official Microsoft Python API
 (found [here](https://github.com/microsoft/azure-devops-python-api)).
 
-## Design Plan
+## Design Plans
 
-The program will be made up of multiple parts:
-
-* **Environment Variable Bank** - This will define a number of environment
-  variables that are used to configure the program.
-    * `PLADO_CONFIG` - Can be used to set the default path to the user config.
-
-* **Global Config** - This will define a number of fields that can be parsed
-  through a user-written JSON file.
-    * At runtime, it will parse a JSON file and search through it for the
-      pre-defined fields.
-    * Each field will be represented by a `ConfigField` object, which will have:
-        * `name` - The name of the field.
-        * `description` - The description of what the field is.
-        * `types` - A list of acceptable types for this field.
-        * `required` - A boolean indicating whether or not the field is required.
-        * `default` - A default value that's used when the field isn't given.
-        * `value` - The current value of the field.
-    * The `Config` object will have a dictionary containing these fields,
-      indexed by field name.
-    * The `Config` object will have `get()` and `set()` functions, which use
-      this dictionary to retrieve field values and update them.
-        * When `set()` is invoked, if an unknown name is given, an error is
-          thrown.
-        * When `set()` is invoked, type-checking is done against the targeted
-          `ConfigField` object to make sure the new value is appropriate.
-    * The config will first pull from the environment variable `PLADO_CONFIG`,
-      followed by `--config`, finally followed by the default location of
-      `${HOME}/.plado_config.json`
-
-* **Command-Line Arguments** - These will be used at runtime to pass in values
-  for processing.
-    * `-c` / `--config` - This will take in a path to a config file. It
-      overrides the default config file path.
+* Event Monitoring
+    * Define a base class, called, `Event`, that has various parameters
+        * `name` - name of the event (basically the class name, converted to lowercase, minus the `"Event_"`)
+        * `fire_params` - command-line arguments with which to fire off a task once an event triggers
+        * ... TODO
+    * Then, extend this base class into various other events:
+        * `Event_PR`
+            * `Event_PR_Create`
+            * `Event_PR_StatusChange`
+            * `Event_PR_Comment_Create`
+            * ...
+        * `Event_WI`
+            * `Event_WI_Create`
+            * `Event_WI_Assign`
+            * `Event_WI_StatusChange`
+            * ...
+        * `Event_Pipeline`
+            * `Event_Pipeline_Launch`
+            * `Event_Pipeline_Finish`
+            * ...
+    * Each event class has their own set of parameters that must be given via
+      the config JSON file
 
 ### Base Features
 
 * Organization information
-    * List projects
+    * List projects (DONE)
 * Project information
-    * List repos
+    * List repos (DONE)
 * Repo information
     * List files
-    * List PRs
+    * List PRs (DONE)
         * Show PR info (creator, description, list files, etc.)
         * Show PR builds that are running (and their statuses)
         * Show PR discussion (comments)
@@ -60,7 +49,7 @@ The program will be made up of multiple parts:
 * Work Item information (boards)
     * Show all work items assigned to a user
 
-* Callbacks/Jobs for certain events - Give users the ability to have this
+* Callbacks/Jobs for certain events ("Event Monitoring") - Give users the ability to have this
   program run in a daemon-like mode that monitors for events such as:
     * New PR created in repo
     * New work item created
