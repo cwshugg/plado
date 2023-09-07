@@ -65,6 +65,10 @@ interacts with the Azure DevOps API, using the official Microsoft Python API
         * Every time a work item is created under a specific group, run a script
           that searches it for keywords and asign it to a certain person.
         * Every time a pipeline is started, write it to a log file.
+    * Examples I personally want to use:
+        * Use this to automatically log *all* of my ADO activity (pushed commits,
+          PR interactions, WI interactions, pipeline runs, etc.)
+        * Every time I create a work item, add a comment that @'s my teammates
 
 * All things list-able will be filterable by regex
 
@@ -80,5 +84,6 @@ interacts with the Azure DevOps API, using the official Microsoft Python API
 
 Some extra ideas for features once the important stuff is done.
 
-* TODO
+* Threading: implement daemon mode to have a configurable number of threads
+  that events can be sent to for processing.
 
