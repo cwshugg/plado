@@ -86,19 +86,20 @@ class Event_PR_Create(Event_PR):
         new_prs = []
         new_prs_len = 0
         for pr in self.prs:
+            pr.creation_date = pr.creation_date.replace(tzinfo=timezone.utc)
             creation = pr.creation_date
-            creation.replace(tzinfo=timezone.utc)
             
             # compute the difference, in seconds, between the two timestamps
-            diff = self.last_poll.timestamp() - creation.timestamp()
+            diff = self.get_last_poll_time().timestamp() - creation.timestamp()
             self.dbg_print("PR-%d was created on: [%s] (%d seconds %s last poll)." %
-                           (pr.code_review_id, str(creation),
+                           (pr.code_review_id,
+                            creation.strftime("%Y-%m-%d %H:%M:%S %p"),
                             abs(diff), "after" if diff < 0 else "before"))
 
             # if the creation date is more recent than the last-polled time,
             # add it to the results list
             if diff < 0:
-                new_prs.append(pr)
+                new_prs.append(pr.as_dict())
                 new_prs_len += 1
 
         # if PRs were collected, return them (otherwise return None)

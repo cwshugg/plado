@@ -50,15 +50,12 @@ class EventThread(threading.Thread):
             
             # otherwise, iterate through the returned data and fire all of the
             # event's jobs
-            children = []
             for entry in result:
                 for job in e.jobs:
                     # spawn a subprocess to handle the job
-                    j = job.fire(entry, wait=False)
-                    children.append(j)
+                    job.fire(entry, wait=False)
 
             # with all subprocesses spawned, wait for them all to complete
-            children_len = len(children)
-            for child in children:
-                child.reap()
-            dbg_print("event", "Reaped %d subprocesses." % children_len)
+            for job in e.jobs:
+                job.reap()
+            dbg_print("event", "Reaped %d subprocesses." % len(e.jobs))

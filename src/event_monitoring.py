@@ -82,7 +82,7 @@ def em_main():
 
     # Helper function for debugging prints with a date/time prefix
     def em_dbg_print(msg: str):
-        now = datetime.now()
+        now = datetime.now(tz=timezone.utc)
         nowstr = now.strftime("%Y-%m-%d %H:%M:%S %p")
         dbg_print("event", "[%s] %s" % (nowstr, msg))
     
@@ -98,7 +98,7 @@ def em_main():
     ngt_last_poll = Nugget("em_last_poll", [int])
     last_poll = ngt_last_poll.read()
     if last_poll is not None:
-        last_poll = datetime.fromtimestamp(last_poll)
+        last_poll = datetime.fromtimestamp(last_poll, tz=timezone.utc)
         for e in events:
             e.set_last_poll_time(last_poll)
         # write the last-poll time out to debug
@@ -132,6 +132,6 @@ def em_main():
             pass
 
         # update the last-poll nuggest, then sleep for the configured time
-        ngt_last_poll.write(int(datetime.now().timestamp()))
+        ngt_last_poll.write(int(datetime.now(tz=timezone.utc).timestamp()))
         time.sleep(poll_rate)
 

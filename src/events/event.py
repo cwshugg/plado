@@ -70,16 +70,15 @@ class EventJob():
         # spawn the process in the correct working directory, and hook up its
         # input and output streams to pipes, connected to this process (the
         # parent)
-        self.process = subrocess.Popen(args,
-                                       cwd=run_dir,
-                                       stdin=PIPE,
-                                       timeout=self.config.get("timeout"))
+        self.process = subprocess.Popen(args,
+                                        cwd=run_dir,
+                                        stdin=subprocess.PIPE)
         
         # write the event data as a JSON string into the process' stdin
         try:
             dbg_print("event", "Sending JSON payload to subprocess.")
             payload = json.dumps(event_data)
-            self.process.communicate(input=json.dumps(payload),
+            self.process.communicate(input=json.dumps(payload).encode(),
                                      timeout=self.config.get("timeout"))
         except subprocess.TimeoutExpired as e:
             dbg_print("event", "Subprocess timeouted out while writing JSON payload.")
@@ -147,7 +146,7 @@ class Event(abc.ABC):
         """
         Returns the timestamp at which this event was last polled.
         """
-        return self.last_poll
+        return self.last_poll.replace(tzinfo=timezone.utc)
 
     def set_last_poll_time(self, dt: datetime):
         """
