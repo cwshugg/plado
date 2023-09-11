@@ -20,7 +20,7 @@ from config import *
 from env import env_init, env, env_vars
 from debug import dbg_init, dbg_print
 from ado import *
-from events.event import *
+from event import *
 from utils.colors import *
 from utils.utils import *
 
