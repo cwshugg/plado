@@ -17,8 +17,8 @@ from config import config_load
 from events.event import *
 from events.event_config import *
 from events.events_pr import *
-from nugget import Nugget
 from debug import dbg_print
+from utils.nugget import Nugget
 from utils.utils import *
 from utils.colors import *
 
