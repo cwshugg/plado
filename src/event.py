@@ -12,7 +12,7 @@ if srcdir not in sys.path:
     sys.path.append(srcdir)
 
 # Tool imports
-from config import EventConfig, EventFilterConfig, EventJobConfig
+from config import EventConfig, EventJobConfig
 from debug import dbg_print
 from utils.utils import *
 
@@ -26,20 +26,11 @@ class EventJob():
         self.config = conf
 
 
-# =============================== Filter Class =============================== #
-class EventFilter():
-    """
-    Class representing a single filter for a monitored event.
-    """
-    def __init__(self, conf: EventFilterConfig):
-        self.config = conf
-
-
 # =============================== Event Class ================================ #
 class Event(abc.ABC):
     """
-    A class that represents a single event to be monitored. Contains filters
-    and jobs to execute when the event fires.
+    A class that represents a single event to be monitored. Contains jobs to
+    execute when the event fires.
     """
     def __init__(self, conf: EventConfig):
         self.config = conf
@@ -65,18 +56,3 @@ class Event(abc.ABC):
             jc.parse_json(jdata)
             self.jobs.append(EventJob(jc))
         
-        # if filters are given, parse them
-        filters = self.config.get("filters")
-        filters_len = len(filters)
-        self.filters = []
-        if filters_len > 0:
-            dbg_print("event", "Found %d filter(s) for event \"%s\". Parsing." %
-                      (filters_len, name))
-            for fdata in filters:
-                fc = EventFilterConfig()
-                fc.parse_json(fdata)
-                self.filters.append(EventFilter(fc))
-        else:
-            dbg_print("event", "Found no filters for event \"%s\"." % name)
-
-

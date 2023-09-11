@@ -200,36 +200,6 @@ class EventJobConfig(Config):
             )
         }
 
-class EventFilterConfig(Config):
-    """
-    A class that defines configuration fields for filtering events based on
-    certain constraints.
-    """
-    def __init__(self):
-        self.fields = {
-            "project": ConfigField(
-                "project",
-                [str],
-                description="A regex to be compared against project names/IDs.",
-                required=False,
-                default=None
-            ),
-            "repository": ConfigField(
-                "repository",
-                [str],
-                description="A regex to be compared against repository names/IDs.",
-                required=False,
-                default=None
-            ),
-            "user": ConfigField(
-                "user",
-                [str],
-                description="A regex to be compared against user names/emails/usernames.",
-                required=False,
-                default=None
-            )
-        }
-
 class EventConfig(Config):
     """
     A class that defines configuration fields for a single event to be monitored
@@ -251,14 +221,6 @@ class EventConfig(Config):
                             "representing tasks to be executed when the event"
                             "occurs.",
                 required=True
-            ),
-            "filters": ConfigField(
-                "filters",
-                [list],
-                description="A list of event filters used to narrow down when "
-                            "this event runs its jobs.",
-                required=False,
-                default=[]
             ),
             "name": ConfigField(
                 "name",

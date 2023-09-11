@@ -141,12 +141,6 @@ def help_show_config():
     for key in c.fields:
         print_field(key, c.fields[key])
 
-    # show all fields from the event config
-    print("\nMonitored event filter configuration fields:")
-    c = EventFilterConfig()
-    for key in c.fields:
-        print_field(key, c.fields[key])
-
 def help_show_env():
     """
     Lists all available environment variables.
