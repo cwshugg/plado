@@ -20,7 +20,7 @@ from config import *
 from env import env_init, env, env_vars
 from debug import dbg_init, dbg_print
 from ado import *
-from event import *
+from event_monitoring import *
 from utils.colors import *
 from utils.utils import *
 
@@ -165,29 +165,6 @@ def help_check():
         sys.exit(0)
                 
 
-# =============================== Monitor Mode =============================== #
-def monmode_init():
-    """
-    Initializes the appropriate monitor mode values and loads in any specified
-    monitor mode config entries.
-    """
-    # first, retrieve the config object and look for the events field
-    config = config_load()
-    events = config.get("monitor_events")
-    if len(events) == 0:
-        panic("You have not specified any events to monitor.")
-
-    # otherwise, iterate through the events in the list and parse them as event
-    # config objects. Then, create Event objects with each config
-    evs = []
-    for entry in events:
-        ec = EventConfig()
-        ec.parse_json(entry)
-        e = Event(ec)
-        evs.append(e)
-
-
-
 # ============================ Main Functionality ============================ #
 def check_project(proj: any):
     """
@@ -299,7 +276,7 @@ def main():
     # if monitor mode is specified, the program will transform into an event
     # monitoring daemon, designed to be run in the background
     if "monitor" in args and args["monitor"]:
-        monmode_init()
+        em_init()
         return 0
 
     # print out the project/repo/branch/etc. that was specified, if possible
