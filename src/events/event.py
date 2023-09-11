@@ -143,14 +143,29 @@ class Event(abc.ABC):
             name = self.config.get("type")
         dbg_print("event", "[%s] %s" % (name, msg))
 
+    def get_last_poll_time(self):
+        """
+        Returns the timestamp at which this event was last polled.
+        """
+        return self.last_poll
+
+    def set_last_poll_time(self, dt: datetime):
+        """
+        Updates the event's last-polled timestamp.
+        """
+        self.last_poll = dt.replace(tzinfo=timezone.utc)
+
     def poll(self):
+        """
+        A wrapper around poll_action() that maintains a 'last_poll' value, which
+        tracks the last time the event was polled.
+        """
         # invoke the abstract method poll_action() (where subclasses will
         # implement their custom logic)
         result = self.poll_action()
 
         # update last-polled time to be now, in UTC
-        self.last_poll = datetime.now()
-        self.last_poll.replace(tzinfo=timezone.utc)
+        self.set_last_poll_time(datetime.now())
         return result
     
     @abc.abstractmethod

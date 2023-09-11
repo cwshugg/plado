@@ -2,6 +2,9 @@
 __pycache__
 *.pyc
 
+# nugget files
+*.nugget
+
 # vim swapfiles
 *.swp
 

@@ -34,14 +34,14 @@ def args_init():
     """
     Creates and initializes the command-line argument parser.
     """
-    desc = "Interact with Azure DevOps on the command-line."
+    desc = "Interact with Azure DevOps on the command-line and monitor for events."
     p = argparse.ArgumentParser(description=desc,
                                 argument_default=None,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     # program-specific arguments
     p.add_argument("-c", "--config",
                    help="Sets the path to the JSON config to read as input.",
-                   type=str, default=None, required=False, metavar="CONFIG_JSON")
+                   type=str, default=None, required=True, metavar="CONFIG_JSON")
     p.add_argument("--color",
                    help="Enables/disables color printing. (Default: enabled when printing to terminal)",
                    type=str, default=None, required=False, metavar="on/off")
@@ -57,6 +57,11 @@ def args_init():
                    help="Sets the ADO repository branch to interact with.",
                    type=str, default=None, required=False, metavar="REPO_NAME")
 
+    # monitor mode arguments
+    p.add_argument("-m", "--monitor",
+                   help="Enables event monitoring daemon mode.",
+                   default=False, action="store_true")
+    
     # ADO routine arguments
     p.add_argument("--show-projects",
                    help="Lists all projects within the configured organization.",
@@ -69,11 +74,6 @@ def args_init():
                    default=False, action="store_true")
     p.add_argument("--show-pullreqs",
                    help="Lists all Pull Requests in the specified repository.",
-                   default=False, action="store_true")
-    
-    # monitor mode arguments
-    p.add_argument("-m", "--monitor",
-                   help="Enables event monitoring daemon mode.",
                    default=False, action="store_true")
     
     # helper arguments
@@ -277,6 +277,7 @@ def main():
     # monitoring daemon, designed to be run in the background
     if "monitor" in args and args["monitor"]:
         em_init()
+        em_main()
         return 0
 
     # print out the project/repo/branch/etc. that was specified, if possible

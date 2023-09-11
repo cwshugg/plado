@@ -67,6 +67,7 @@ class Config:
         """
         Constructor. Creates the config object.
         """
+        self.path = None
         self.fields = {
             "ado_pat": ConfigField(
                 "ado_pat",
@@ -88,6 +89,22 @@ class Config:
                             "running in monitor mode.",
                 required=False,
                 default=[]
+            ),
+            "monitor_poll_rate": ConfigField(
+                "monitor_poll_rate",
+                [int],
+                description="The number of seconds between periodic polls when "
+                            "in event monitoring mode.",
+                required=False,
+                default=30
+            ),
+            "monitor_threads": ConfigField(
+                "monitor_threads",
+                [int],
+                description="The number of worker threads to spawn in event "
+                            "monitoring mode.",
+                required=False,
+                default=1
             )
         }
     
@@ -134,6 +151,7 @@ class Config:
         fp = open(fpath, "r")
         jdata = json.load(fp)
         fp.close()
+        self.path = fpath
         
         # invoke the JSON-parsing function
         self.parse_json(jdata)

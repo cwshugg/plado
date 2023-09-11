@@ -4,6 +4,8 @@
 # Imports
 import os
 import sys
+import time
+from datetime import datetime
 
 # Library path setup
 srcdir = os.path.realpath(os.path.dirname(__file__))
@@ -15,8 +17,10 @@ from config import config_load
 from events.event import *
 from events.event_config import *
 from events.events_pr import *
+from nugget import Nugget
 from debug import dbg_print
 from utils.utils import *
+from utils.colors import *
 
 # Globals
 event_classes = { # map of type names to classes
@@ -64,4 +68,44 @@ def em_init():
     for entry in evs:
         events.append(em_create_event(entry))
     dbg_print("event", "Initialized %d event(s)." % len(events))
+
+def em_main():
+    """
+    The "main" function for event monitoring mode. Repeatedly loops and
+    spawns threads to check individual events' statuses.
+    """
+    config = config_load()
+    global events
+    dbg_print("event", "Beginning event monitoring.")
+
+    # ensure the poll rate is greater than zero
+    poll_rate = config.get("monitor_poll_rate")
+    if poll_rate <= 0:
+        panic("The poll rate (%smonitor_poll_rate%s) must be greater than zero." %
+              (color("config_field_name"), color("none")))
+
+    # create a nugget to use for keeping track of the last time we iterated in
+    # the below loop. If we can read a value in from a previous run, update all
+    # events' 'last_poll' values to reflect it
+    ngt_last_poll = Nugget("em_last_poll", [int])
+    last_poll = ngt_last_poll.read()
+    if last_poll is not None:
+        last_poll = datetime.fromtimestamp(last_poll)
+        for e in events:
+            e.set_last_poll_time(last_poll)
+        # write the last-poll time out to debug
+        dbg_print("event", "Last poll time: %s" %
+                  last_poll.strftime("%Y-%m-%d %H:%M:%S %p"))
+    
+    while True:
+        now = datetime.now()
+        nowstr = now.strftime("%Y-%m-%d %H:%M:%S %p")
+        dbg_print("event", "[%s] Polling for events." % nowstr)
+
+        # submit each event to the queue for examination by the worker threads
+        # TODO
+
+        # update the last-poll nuggest, then sleep for the configured time
+        ngt_last_poll.write(int(now.timestamp()))
+        time.sleep(config.get("monitor_poll_rate"))
 
