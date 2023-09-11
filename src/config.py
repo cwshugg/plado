@@ -39,20 +39,13 @@ class ConfigField:
         self.default = default      # default value for non-required fields
         self.value = default        # current value of the field
 
-    def type_match(self, value: any):
-        """
-        Checks the given type against the field's acceptable types.
-        Returns True if there is a match, and False otherwise.
-        """
-        return type(value) in self.types
-
-    def set(self, value: any):
+    def set(self, value: any, do_typecheck=True):
         """
         Checks the given new value against the allowed types and updates the
         field. If the type isn't allowed an exception is thrown.
         """
         # check the type and throw an exception if necessary
-        if type(value) not in self.types:
+        if do_typecheck and type(value) not in self.types:
             raise Exception("ConfigField Error: Field \"%s\" must be one of "
                             "the following types: %s" %
                             (self.name, str(self.types)))
@@ -87,6 +80,14 @@ class Config:
                 description="Your Azure DevOps Organization Name OR full URL "
                             "(ex: \"ORG_NAME\" or \"https://dev.azure.com/ORG_NAME\")",
                 required=True
+            ),
+            "monitor_events": ConfigField(
+                "monitor_events",
+                [list],
+                description="A list of events to watch for (and react to) when "
+                            "running in monitor mode.",
+                required=False,
+                default=[]
             )
         }
     
@@ -109,7 +110,7 @@ class Config:
             return self.fields[name].get()
         raise Exception("Config Error: Unrecognized field name: \"%s\"" % name)
 
-    def set(self, name: str, value: any):
+    def set(self, name: str, value: any, do_typecheck=True):
         """
         Takes in a config field name and a value and attempts to update the
         field's value. If the field name is not recognized, an exception is
@@ -117,7 +118,7 @@ class Config:
         it will an exception will be thrown.
         """
         if name in self.fields:
-            self.fields[name].set(value)
+            self.fields[name].set(value, do_typecheck=do_typecheck)
             return
         raise Exception("Config Error: Unrecognized field name: \"%s\"" % name)
     
@@ -142,6 +143,7 @@ class Config:
         Takes in a dictionary (JSON data) and attempts to parse all the config
         fields defined in the class.
         """
+        dbg_print("config", "Parsing JSON for %s." % self.__class__.__name__)
         for name in self.fields:
             f = self.fields[name]
 
@@ -155,7 +157,7 @@ class Config:
                 raise Exception("Config Error: Required field \"%s\" not found." % f.name)
             
             # otherwise, set the value to the field's default
-            self.set(f.name, f.default)
+            self.set(f.name, f.default, do_typecheck=False)
     
     # ------------------------------- Helpers -------------------------------- #
     # Converts the config into a JSON dictionary and returns it.
@@ -166,6 +168,107 @@ class Config:
             f = self.fields[key]
             result[f.name] = f.get()
         return result
+
+
+# ========================= Event Monitoring Configs ========================= #
+class EventJobConfig(Config):
+    """
+    A class that defines a job to run when an event is fired.
+    """
+    def __init__(self):
+        self.fields = {
+            "args": ConfigField(
+                "args",
+                [list],
+                description="Command-line arguments to run the job.",
+                required=True
+            ),
+            "name": ConfigField(
+                "name",
+                [str],
+                description="An optional nickname to give the job.",
+                required=False,
+                default=None
+            ),
+            "run_dir": ConfigField(
+                "run_dir",
+                [str],
+                description="A path to the directory from which this job "
+                            "should be run.",
+                required=False,
+                default=None
+            )
+        }
+
+class EventFilterConfig(Config):
+    """
+    A class that defines configuration fields for filtering events based on
+    certain constraints.
+    """
+    def __init__(self):
+        self.fields = {
+            "project": ConfigField(
+                "project",
+                [str],
+                description="A regex to be compared against project names/IDs.",
+                required=False,
+                default=None
+            ),
+            "repository": ConfigField(
+                "repository",
+                [str],
+                description="A regex to be compared against repository names/IDs.",
+                required=False,
+                default=None
+            ),
+            "user": ConfigField(
+                "user",
+                [str],
+                description="A regex to be compared against user names/emails/usernames.",
+                required=False,
+                default=None
+            )
+        }
+
+class EventConfig(Config):
+    """
+    A class that defines configuration fields for a single event to be monitored
+    by the program. These events are to be defined in the main configuration
+    file.
+    """
+    def __init__(self):
+        self.fields = {
+            "type": ConfigField(
+                "type",
+                [str],
+                description="The name of the type of event you wish to monitor.",
+                required=True
+            ),
+            "jobs": ConfigField(
+                "jobs",
+                [list],
+                description="A list containing lists of command-line arguments, "
+                            "representing tasks to be executed when the event"
+                            "occurs.",
+                required=True
+            ),
+            "filters": ConfigField(
+                "filters",
+                [list],
+                description="A list of event filters used to narrow down when "
+                            "this event runs its jobs.",
+                required=False,
+                default=[]
+            ),
+            "name": ConfigField(
+                "name",
+                [str],
+                description="An optional nickname to give the event.",
+                required=False,
+                default=None
+            ),
+        }
+
 
 
 # ============================== Global Access =============================== #

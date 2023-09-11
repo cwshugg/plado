@@ -1,4 +1,4 @@
-#!/usr/bin/env pytho3
+#!/usr/bin/env python3
 # The main source file for this tool.
 
 # Imports
@@ -16,10 +16,11 @@ if srcdir not in sys.path:
     sys.path.append(srcdir)
 
 # Tool imports
-from config import Config, config_store, config_load
+from config import *
 from env import env_init, env, env_vars
 from debug import dbg_init, dbg_print
 from ado import *
+from events.event import *
 from utils.colors import *
 from utils.utils import *
 
@@ -70,6 +71,11 @@ def args_init():
                    help="Lists all Pull Requests in the specified repository.",
                    default=False, action="store_true")
     
+    # monitor mode arguments
+    p.add_argument("-m", "--monitor",
+                   help="Enables event monitoring daemon mode.",
+                   default=False, action="store_true")
+    
     # helper arguments
     p.add_argument("--show-config",
                    help="Lists all available configuration fields.",
@@ -96,13 +102,10 @@ def help_show_config():
     """
     Lists all available config fields and their properties.
     """
-    print("All Available Config Fields: (%s*%s = required)" %
+    print("Top-level configuration fields: (%s*%s = required)" %
           (color("config_field_req"), color("none")))
 
-    # iterate across all fields
-    config = config_load()
-    for key in config.fields:
-        f = config.fields[key]
+    def print_field(key, f):
         # print the name and description
         msg_name = "%s%s%s" % (color("config_field_name"), f.name, color("none"))
         msg_desc = f.description
@@ -120,6 +123,29 @@ def help_show_config():
         msg_default = "" if f.required else " (default: %s)" % str(f.default)
         print("%sAccepted types: %s%s" %
               (str_tab(count=2, bullet=bullet_char), msg_types, msg_default))
+
+    # iterate across all fields in the main config
+    config = config_load()
+    for key in config.fields:
+        print_field(key, config.fields[key])
+        
+    # show all fields from the event config
+    print("\nMonitored event configuration fields:")
+    c = EventConfig()
+    for key in c.fields:
+        print_field(key, c.fields[key])
+
+    # show all fields from the event config
+    print("\nMonitored event job configuration fields:")
+    c = EventJobConfig()
+    for key in c.fields:
+        print_field(key, c.fields[key])
+
+    # show all fields from the event config
+    print("\nMonitored event filter configuration fields:")
+    c = EventFilterConfig()
+    for key in c.fields:
+        print_field(key, c.fields[key])
 
 def help_show_env():
     """
@@ -144,6 +170,29 @@ def help_check():
         help_show_env()
         sys.exit(0)
                 
+
+# =============================== Monitor Mode =============================== #
+def monmode_init():
+    """
+    Initializes the appropriate monitor mode values and loads in any specified
+    monitor mode config entries.
+    """
+    # first, retrieve the config object and look for the events field
+    config = config_load()
+    events = config.get("monitor_events")
+    if len(events) == 0:
+        panic("You have not specified any events to monitor.")
+
+    # otherwise, iterate through the events in the list and parse them as event
+    # config objects. Then, create Event objects with each config
+    evs = []
+    for entry in events:
+        ec = EventConfig()
+        ec.parse_json(entry)
+        e = Event(ec)
+        evs.append(e)
+
+
 
 # ============================ Main Functionality ============================ #
 def check_project(proj: any):
@@ -250,6 +299,13 @@ def main():
         check_project(project)
         check_repo(repo)
         ado_list_pullreqs(project, repo)
+        return 0
+
+    # ----------------------------- Monitor Mode ----------------------------- #
+    # if monitor mode is specified, the program will transform into an event
+    # monitoring daemon, designed to be run in the background
+    if "monitor" in args and args["monitor"]:
+        monmode_init()
         return 0
 
     # print out the project/repo/branch/etc. that was specified, if possible

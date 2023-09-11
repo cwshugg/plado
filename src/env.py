@@ -75,6 +75,10 @@ env_vars = {
     env_prefix + "DEBUG_ADO": EnvironmentVariable_Bool(
         env_prefix + "DEBUG_ADO",
         description="Set to 1 to enable debug prints for Azure DevOps interaction code."
+    ),
+    env_prefix + "DEBUG_EVENT": EnvironmentVariable_Bool(
+        env_prefix + "DEBUG_EVENT",
+        description="Set to 1 to enable debug prints for event monitoring code."
     )
 }
 

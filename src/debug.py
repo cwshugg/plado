@@ -16,7 +16,8 @@ from utils.colors import color
 
 dbg_flags = {
     "config": False,    # config file debugging
-    "ado": False        # ADO debugging
+    "ado": False,       # ADO debugging
+    "event": False      # event monitoring
 }
 
 def dbg_set(flag: str, enabled: bool):
@@ -37,6 +38,9 @@ def dbg_init():
     if env("DEBUG_ADO") == True:
         dbg_set("ado", True)
         dbg_print("ado", "Debug printing enabled.")
+    if env("DEBUG_EVENT") == True:
+        dbg_set("event", True)
+        dbg_print("event", "Debug printing enabled.")
 
 def dbg_print(context: str, msg: str, end="\n"):
     """

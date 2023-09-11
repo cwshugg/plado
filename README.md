@@ -4,6 +4,14 @@ This contains code involving my idea for writing a command-line application that
 interacts with the Azure DevOps API, using the official Microsoft Python API
 (found [here](https://github.com/microsoft/azure-devops-python-api)).
 
+## Name Ideas
+
+* PLADO is a cool acronym, but it's not really that meaningful if it's just
+  "painless"
+* What about "ADOMate"? It's got ADO in the name, is a play on the word
+  "automate" (which is what the tool does), and "mate" makes it sound like
+  the tool is your buddy that helps you out
+
 ## Design Plans
 
 * Event Monitoring
