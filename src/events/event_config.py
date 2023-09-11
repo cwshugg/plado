@@ -46,7 +46,7 @@ class EventJobConfig(Config):
             ),
             "timeout": ConfigField(
                 "timeout",
-                [str],
+                [int],
                 description="The number of seconds the job is allowed to run "
                             "before it is killed.",
                 required=False,
