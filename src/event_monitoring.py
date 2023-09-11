@@ -16,6 +16,8 @@ if srcdir not in sys.path:
 from config import config_load
 from events.event import *
 from events.event_config import *
+from events.event_queue import EventQueue
+from events.event_thread import EventThread
 from events.events_pr import *
 from debug import dbg_print
 from utils.nugget import Nugget
@@ -78,6 +80,12 @@ def em_main():
     global events
     dbg_print("event", "Beginning event monitoring.")
 
+    # Helper function for debugging prints with a date/time prefix
+    def em_dbg_print(msg: str):
+        now = datetime.now()
+        nowstr = now.strftime("%Y-%m-%d %H:%M:%S %p")
+        dbg_print("event", "[%s] %s" % (nowstr, msg))
+    
     # ensure the poll rate is greater than zero
     poll_rate = config.get("monitor_poll_rate")
     if poll_rate <= 0:
@@ -97,15 +105,33 @@ def em_main():
         dbg_print("event", "Last poll time: %s" %
                   last_poll.strftime("%Y-%m-%d %H:%M:%S %p"))
     
+    # ensure the number of threads is greater than zero
+    ethreads_len = config.get("monitor_threads")
+    if ethreads_len <= 0:
+        panic("The number of event monitoring threads (%smonitor_threads%s) "
+              "must be greater than zero." %
+              (color("config_field_name"), color("none")))
+
+    # create an event queue and the configured number of event threads
+    equeue = EventQueue()
+    ethreads = []
+    for i in range(ethreads_len):
+        et = EventThread(equeue)
+        ethreads.append(et)
+        et.start()
+
     while True:
-        now = datetime.now()
-        nowstr = now.strftime("%Y-%m-%d %H:%M:%S %p")
-        dbg_print("event", "[%s] Polling for events." % nowstr)
+        em_dbg_print("Polling for events.")
 
         # submit each event to the queue for examination by the worker threads
-        # TODO
+        for e in events:
+            equeue.push(e)
+
+        # wait until all queue entries have been processed
+        while equeue.size() > 0:
+            pass
 
         # update the last-poll nuggest, then sleep for the configured time
-        ngt_last_poll.write(int(now.timestamp()))
-        time.sleep(config.get("monitor_poll_rate"))
+        ngt_last_poll.write(int(datetime.now().timestamp()))
+        time.sleep(poll_rate)
 

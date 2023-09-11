@@ -4,6 +4,7 @@
 # Imports
 import os
 import sys
+import threading
 
 # Path setup
 srcdir = os.path.realpath(os.path.dirname(__file__))
@@ -51,13 +52,20 @@ def dbg_print(context: str, msg: str, end="\n"):
         raise Exception("Debug Error: Unrecognized debug flag: \"%s\"." % context)
     if not dbg_flags[context]:
         return
+
+    # determine if we're in the main thread or not
+    mt = threading.main_thread().native_id
+    ct = threading.current_thread().native_id
+    thread_str = ""
+    if ct != mt:
+        thread_str = " T-%s%s%s" % (color(str(ct)), ct, color("none"))
     
     # create a prefix to print with, based on the context
     context_color = color(context)
-    pfx = "%s[%sdebug%s.%s%s%s]%s " % \
+    pfx = "%s[%sdebug%s.%s%s%s%s%s]%s " % \
           (color("dkgray"), color("dbg"), color("dkgray"),
-           context_color, context,
-           color("dkgray"), color("none"))
+           context_color, context, color("none"),
+           thread_str, color("dkgray"), color("none"))
 
     # print to stderr
     sys.stderr.write("%s%s%s" % (pfx, msg, end))
