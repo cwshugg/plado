@@ -84,7 +84,8 @@ env_vars = {
 # add event-specific debug variables
 for ename in ["pr_create", "pr_draft_on", "pr_draft_off",
               "pr_commit_new_src", "pr_commit_new_dst",
-              "pr_status_change", "pr_reviewer_added"]:
+              "pr_status_change", "pr_reviewer_added",
+              "pr_reviewer_voted"]:
     name = "DEBUG_EVENT_%s" % ename.upper()
     env_vars[env_prefix + name] = EnvironmentVariable_Bool(
         env_prefix + name,

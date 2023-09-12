@@ -26,6 +26,7 @@ dbg_flags = {
     "event_pr_commit_new_dst": False,   # event monitoring for pr_commit_new_dst
     "event_pr_status_change": False,    # event monitoring for pr_status_change
     "event_pr_reviewer_added": False,   # event monitoring for pr_reviewer_added
+    "event_pr_reviewer_voted": False,   # event monitoring for pr_reviewer_voted
 }
 
 def dbg_set(flag: str, enabled: bool):

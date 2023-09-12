@@ -389,16 +389,14 @@ class EventConfig_PR_Reviewer_Added(EventConfig_PR):
             "only_optional": ConfigField(
                 "only_optional",
                 [bool],
-                description="Set to true to only trigger when a/the user is added as "
-                            "an optional reviewer.",
+                description="Set to true to only trigger when a/the reviewer is optional.",
                 required=False,
                 default=False
             ),
             "only_required": ConfigField(
                 "only_required",
                 [bool],
-                description="Set to true to only trigger when a/the user is added as "
-                            "a required reviewer.",
+                description="Set to true to only trigger when a/the reviewer is required.",
                 required=False,
                 default=False
             ),
@@ -408,6 +406,27 @@ class Event_PR_Reviewer_Added(Event_PR):
     """
     An extension of the Event_PR class specific for adding a PR reviewer.
     """
+    def match_reviewer_name(self, rev):
+        """
+        Returns True if the configured 'user' field matches the given reviewer.
+        """
+        user = self.config.get("user")
+        if user is None:
+            return True
+
+        unique_name = rev.unique_name.lower().strip()
+        user = user.strip().lower()
+
+        # extract the username from an email address (if possible)
+        user_email_name = unique_name if "@" not in unique_name else \
+                            unique_name.split("@")[0]
+        
+        # compare against the display name, unique name, and extracted name
+        match = rev.display_name.lower().strip() == user or \
+                unique_name == user or \
+                user_email_name == user
+        return match
+
     def check_reviewers(self, pr, revs_new: dict, revs_old: dict):
         """
         Performs checks on the PR reviewers, given the new and old list.
@@ -432,29 +451,16 @@ class Event_PR_Reviewer_Added(Event_PR):
                     continue
 
                 # check for a matching user, if configured
-                user = self.config.get("user")
-                unique_name = rev.unique_name.lower().strip()
-                if user is not None:
-                    user = user.strip().lower()
-                    # extract the username from an email address (if possible)
-                    # and compare against the display name, unique name, and
-                    # extracted username
-                    user_email_name = unique_name if "@" not in unique_name else \
-                                      unique_name.split("@")[0]
-                    match = rev.display_name.lower().strip() == user or \
-                            unique_name == user or \
-                            user_email_name == user
-                    # don't consider this reviewer if it wasn't a match
-                    if not match:
-                        continue
+                if not self.match_reviewer_name(rev):
+                    continue
 
-                self.dbg_print("PR-%s: Found new %s reviewer%s: \"%s\"." %
+                self.dbg_print("PR-%s: Found new %s valid reviewer: \"%s\"." %
                                (str(pr.code_review_id),
                                 "required" if is_required else "optional",
-                                " with matching username" if user is not None else "",
-                                unique_name))
-                # if we found a result, return True to tell poll_action() to
-                # add this PR to the result list
+                                rev.unique_name))
+
+                # return True to tell poll_action() to add this PR to the
+                # result list
                 return True
         
         # if we reached the bottom before returning True, then there must be no
@@ -496,4 +502,76 @@ class Event_PR_Reviewer_Added(Event_PR):
         self.dbg_print("Found %s PRs with reviewer updates." %
                        ("no" if results_len == 0 else str(results_len)))
         return None if results_len == 0 else results
+
+
+# ============================ PR Reviewer Voted ============================= #
+class EventConfig_PR_Reviewer_Voted(EventConfig_PR_Reviewer_Added):
+    """
+    An extension of the EventConfig_PR class specific for a PR reviewer voting.
+    """
+    def __init__(self):
+        super().__init__()
+        self.fields.update({
+            "desired_vote": ConfigField(
+                "desired_vote",
+                [int],
+                description="The specific integer value of the reviewer's vote you"
+                            "want this event to trigger for.",
+                required=False,
+                default=None
+            ),
+        })
+
+class Event_PR_Reviewer_Voted(Event_PR_Reviewer_Added):
+    """
+    An extension of the Event_PR class specific for adding a PR reviewer.
+    """
+    def check_reviewers(self, pr, revs_new: dict, revs_old: dict):
+        """
+        Performs checks on the PR reviewers, given the new and old list.
+        Subclasses will define their own to implement other reviewer-related
+        events.
+        """
+        # iterate over the lists
+        for name in revs_new:
+            # skip new reviewers
+            if name not in revs_old:
+                continue
+            rev = revs_new[name]
+
+            # get the reviewer's previous and current vote
+            vote_new = revs_new[name].vote
+            vote_old = revs_old[name].vote
+            self.dbg_print("PR-%s: Reviewer \"%s\" vote: old=%s%s%s, new=%s%s%s." %
+                           (str(pr.code_review_id), name,
+                            color(str(vote_old)), str(vote_old), color("none"),
+                            color(str(vote_new)), str(vote_new), color("none")))
+
+            # if the vote values match, then nothing has changed
+            if vote_new == vote_old:
+                continue
+
+            # look at the configured 'only_*' fields and skip if this reviewer
+            # doesn't apply
+            is_required = hasattr(rev, "is_required") and rev.is_required
+            if self.config.get("only_optional") and is_required:
+                continue
+            if self.config.get("only_required") and not is_required:
+                continue
+            
+            # make sure the configured username matches
+            if not self.match_reviewer_name(rev):
+                continue
+
+            # if the vote value (if given) doesn't match, skip this one
+            desired_vote = self.config.get("desired_vote")
+            if desired_vote is not None and vote_new != desired_vote:
+                continue
+            
+            # all checks passed: return True
+            self.dbg_print("PR-%s: Reviewer \"%s\" has a valid/matching vote." %
+                           (str(pr.code_review_id), name))
+            return True
+
+        return False
 

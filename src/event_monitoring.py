@@ -33,6 +33,7 @@ event_classes = { # map of type names to classes
     "pr_commit_new_dst":    [Event_PR_Commit_New_Dst, EventConfig_PR_Commit_New_Dst],
     "pr_status_change":     [Event_PR_Status_Change, EventConfig_PR_Status_Change],
     "pr_reviewer_added":    [Event_PR_Reviewer_Added, EventConfig_PR_Reviewer_Added],
+    "pr_reviewer_voted":    [Event_PR_Reviewer_Voted, EventConfig_PR_Reviewer_Voted],
 }
 events = []
 

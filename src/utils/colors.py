@@ -122,6 +122,9 @@ colors = {
     "gray":                 color_rgb(150, 150, 150),
     "dkgray":               color_rgb(110, 110, 110),
 
+    # number colors
+    "0":                    color_rgb(125, 125, 125),
+
     # program-specific colors
     "config_field_name":    color_rgb(150, 255, 255),
     "config_field_req":     color_rgb(255, 255, 100),
