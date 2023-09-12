@@ -79,16 +79,16 @@ env_vars = {
     env_prefix + "DEBUG_EVENT": EnvironmentVariable_Bool(
         env_prefix + "DEBUG_EVENT",
         description="Set to 1 to enable debug prints for event monitoring code."
-    ),
-    env_prefix + "DEBUG_EVENT_PR_CREATE": EnvironmentVariable_Bool(
-        env_prefix + "DEBUG_EVENT_PR_CREATE",
-        description="Set to 1 to enable debug prints for PR Creation event monitoring."
-    ),
-    env_prefix + "DEBUG_EVENT_PR_DRAFT_ON": EnvironmentVariable_Bool(
-        env_prefix + "DEBUG_EVENT_PR_DRAFT_ON",
-        description="Set to 1 to enable debug prints for PR Draft On event monitoring."
     )
 }
+# add event-specific debug variables
+for ename in ["pr_create", "pr_draft_on", "pr_draft_off",
+              "pr_commit_new_src", "pr_commit_new_dst"]:
+    name = "DEBUG_EVENT_%s" % ename.upper()
+    env_vars[env_prefix + name] = EnvironmentVariable_Bool(
+        env_prefix + name,
+        description="Set to 1 to enable debug prints for %s event monitoring." % ename
+    )
 
 def env_init():
     """

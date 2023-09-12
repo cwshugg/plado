@@ -104,6 +104,9 @@ class Event_PR_Create(Event_PR):
     An extension of the Event_PR class specific for PR creation.
     """
     def poll_action(self):
+        """
+        Overridden poll_action().
+        """
         super().poll_action()
         new_prs = []
         new_prs_len = 0
@@ -125,35 +128,179 @@ class Event_PR_Create(Event_PR):
                 new_prs_len += 1
 
         # if PRs were collected, return them (otherwise return None)
+        self.dbg_print("Found %s new PRs." %
+                       ("no" if new_prs_len == 0 else str(new_prs_len)))
         return None if new_prs_len == 0 else new_prs
 
 
-# ============================= PR Draft Enable ============================== #
+# ========================= PR Draft Enable/Disable ========================== #
 class EventConfig_PR_Draft_On(EventConfig_PR):
     """
     An extension of the EventConfig_PR class specific for a PR's draft mode
     being enabled.
     """
+    def __init__(self):
+        super().__init__()
+        self.fields.update({
+            "include_new_pullreqs": ConfigField(
+                "include_new_pullreqs",
+                [bool],
+                description="Set to true to have this event trigger for new "
+                            "Pull Requests created with the desired draft mode.",
+                required=False,
+                default=False
+            )
+        })
+
 
 class Event_PR_Draft_On(Event_PR):
     """
     An extension of the Event_PR class specific for a PR's draft mode being
     enabled.
     """
+    def __init__(self, conf: EventConfig_PR_Draft_On):
+        """
+        Constructor.
+        """
+        super().__init__(conf)
+        self.desired_state = True # meaning, we want to see draft mode ON
+
     def poll_action(self):
+        """
+        Overridden poll_action().
+        """
         super().poll_action()
         # if we don't have a backup of PR data from a previous poll, we can't
         # yet detect if this event has happened
         if self.pr_backups is None:
+            self.dbg_print("test")
             return None
 
+        # for each pull request currently active
         results = []
-        results_len = 0
-        
-        self.dbg_print("TODO - IMPLEMENT A WAY FOR ALL PR THREADS TO SHARE THE "
-                       "SAME COPY OF PR BACKUPS, SO THEY EACH DON'T WRITE EVERY "
-                       "TIME MAYBE")
-        self.dbg_print("OR IF NOT THAT, AT LEAST MAKE THEM USE A LOCK TO PREVENT "
-                       "THE SAME FILE FROM BEING WRITTEN SIMULTANEOUSLY.")
+        for pr in self.prs:
+            # if the PR was *just* created, add it to the results if it was
+            # created in draft mode and the correct config option is set
+            if pr.code_review_id not in self.pr_backups:
+                if pr.is_draft == self.desired_state and \
+                   self.config.get("include_new_pullreqs"):
+                    results.append(pr.as_dict())
+                continue
+
+            # otherwise, grab the old copy of the PR and compare the draft mode
+            # to see if it went from OFF --> ON
+            pr_old = self.pr_backups[pr.code_review_id]
+            if pr_old.is_draft != self.desired_state and \
+               pr.is_draft == self.desired_state:
+                results.append(pr.as_dict())
                        
+        results_len = len(results)
+        self.dbg_print("Found %s PRs that were recently switched to draft mode." %
+                       ("no" if results_len == 0 else str(results_len)))
+        return None if results_len == 0 else results
+
+class EventConfig_PR_Draft_Off(EventConfig_PR_Draft_On):
+    """
+    An extension of the EventConfig_PR class specific for a PR's draft mode
+    being disabled.
+    """
+
+class Event_PR_Draft_Off(Event_PR_Draft_On):
+    """
+    An extension of the Event_PR class specific for a PR's draft mode being
+    disabled.
+    """
+    def __init__(self, conf: EventConfig_PR_Draft_Off):
+        """
+        Constructor.
+        """
+        super().__init__(conf)
+        self.desired_state = False # meaning, we want to see draft mode OFF
+
+
+# ================================ PR Commits ================================ #
+class EventConfig_PR_Commit_New_Src(EventConfig_PR):
+    """
+    An extension of the EventConfig_PR class specific for a PR receiving a new
+    commit from the source branch.
+    """
+
+class Event_PR_Commit_New_Src(Event_PR):
+    """
+    An extension of the Event_PR class specific for a PR receiving a new
+    commit from the source branch.
+    """
+    def __init__(self, conf: EventConfig_PR_Commit_New_Src):
+        """
+        Constructor.
+        """
+        super().__init__(conf)
+        self.src = True # meaning, we want to check src branch for
+                        # a new commit
+
+    def poll_action(self):
+        """
+        Overridden poll_action().
+        """
+        super().poll_action()
+        # if we don't have a backup of PR data from a previous poll, we can't
+        # yet detect if this event has happened
+        if self.pr_backups is None:
+            self.dbg_print("test")
+            return None
+
+        # for each pull request currently active
+        results = []
+        for pr in self.prs:
+            # ignore new PRs
+            if pr.code_review_id not in self.pr_backups:
+                continue
+            pr_old = self.pr_backups[pr.code_review_id]
+            
+            # otherwise, examine the commit hash of the latest commit for the
+            # desired branch
+            commit_new = pr.last_merge_source_commit if self.src else \
+                         pr.last_merge_target_commit
+            commit_old = pr_old.last_merge_source_commit if self.src else \
+                         pr_old.last_merge_target_commit
+            
+            # compare the commits; if the new is different from the old, then
+            # add it to the result list
+            self.dbg_print("PR-%s previous %s commit hash: %s" %
+                           (str(pr.code_review_id),
+                            "source" if self.src else "target",
+                            commit_old.commit_id))
+            self.dbg_print("PR-%s latest %s commit hash:   %s" %
+                           (str(pr.code_review_id),
+                            "source" if self.src else "target",
+                            commit_new.commit_id))
+            if commit_new.commit_id != commit_old.commit_id:
+                self.dbg_print("PR-%s has a new %s commit!" %
+                               (str(pr.code_review_id),
+                                "source" if self.src else "target"))
+                results.append(pr.as_dict())
+
+        results_len = len(results)
+        self.dbg_print("Found %s PRs that recently received new commits." %
+                       ("no" if results_len == 0 else str(results_len)))
+        return None if results_len == 0 else results
+
+class EventConfig_PR_Commit_New_Dst(EventConfig_PR_Commit_New_Src):
+    """
+    An extension of the EventConfig_PR class specific for a PR receiving a new
+    commit from the target (destination) branch.
+    """
+
+class Event_PR_Commit_New_Dst(Event_PR_Commit_New_Src):
+    """
+    An extension of the Event_PR class specific for a PR receiving a new
+    commit from the target (destination) branch.
+    """
+    def __init__(self, conf: EventConfig_PR_Commit_New_Dst):
+        """
+        Constructor.
+        """
+        super().__init__(conf)
+        self.src = False # meaning, we want to check dst branch for
+                         # a new commit
 

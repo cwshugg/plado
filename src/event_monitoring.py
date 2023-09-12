@@ -26,8 +26,11 @@ from utils.storage import *
 
 # Globals
 event_classes = { # map of type names to classes
-    "pr_create":        [Event_PR_Create, EventConfig_PR_Create],
-    "pr_draft_on":      [Event_PR_Draft_On, EventConfig_PR_Draft_On]
+    "pr_create":            [Event_PR_Create, EventConfig_PR_Create],
+    "pr_draft_on":          [Event_PR_Draft_On, EventConfig_PR_Draft_On],
+    "pr_draft_off":         [Event_PR_Draft_Off, EventConfig_PR_Draft_Off],
+    "pr_commit_new_src":    [Event_PR_Commit_New_Src, EventConfig_PR_Commit_New_Src],
+    "pr_commit_new_dst":    [Event_PR_Commit_New_Dst, EventConfig_PR_Commit_New_Dst],
 }
 events = []
 

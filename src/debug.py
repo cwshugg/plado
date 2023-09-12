@@ -16,11 +16,14 @@ from env import env
 from utils.colors import color
 
 dbg_flags = {
-    "config": False,                # config file debugging
-    "ado": False,                   # ADO debugging
-    "event": False,                 # event monitoring
-    "event_pr_create": False,       # event monitoring for pr_create
-    "event_pr_draft_on": False      # event monitoring for pr_create
+    "config": False,                    # config file debugging
+    "ado": False,                       # ADO debugging
+    "event": False,                     # event monitoring
+    "event_pr_create": False,           # event monitoring for pr_create
+    "event_pr_draft_on": False,         # event monitoring for pr_draft_on
+    "event_pr_draft_off": False,        # event monitoring for pr_draft_off
+    "event_pr_commit_new_src": False,   # event monitoring for pr_commit_new_src
+    "event_pr_commit_new_dst": False    # event monitoring for prcommit_new_dst
 }
 
 def dbg_set(flag: str, enabled: bool):
@@ -35,21 +38,10 @@ def dbg_init():
     """
     Checks environment variables and toggles flags accordingly.
     """
-    if env("DEBUG_CONFIG") == True:
-        dbg_set("config", True)
-        dbg_print("config", "Debug printing enabled.")
-    if env("DEBUG_ADO") == True:
-        dbg_set("ado", True)
-        dbg_print("ado", "Debug printing enabled.")
-    if env("DEBUG_EVENT") == True:
-        dbg_set("event", True)
-        dbg_print("event", "Debug printing enabled.")
-    if env("DEBUG_EVENT_PR_CREATE") == True:
-        dbg_set("event_pr_create", True)
-        dbg_print("event_pr_create", "Debug printing enabled.")
-    if env("DEBUG_EVENT_PR_DRAFT_ON") == True:
-        dbg_set("event_pr_draft_on", True)
-        dbg_print("event_pr_draft_on", "Debug printing enabled.")
+    for flag in dbg_flags:
+        if env("DEBUG_%s" % flag.upper()) == True:
+            dbg_set(flag, True)
+            dbg_print(flag, "Debug printing enabled.")
 
 def dbg_print(context: str, msg: str, end="\n"):
     """
