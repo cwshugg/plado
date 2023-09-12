@@ -7,35 +7,32 @@ interacts with the Azure DevOps API, using the official Microsoft Python API
 ## Name Ideas
 
 * PLADO is a cool acronym, but it's not really that meaningful if it's just
-  "painless"
+  "painless". Could it mean something else?
+    * Perhaps "Perceiver of L\_\_\_ on Azure DevOps" (what would "L" stand for?)
 * What about "ADOMate"? It's got ADO in the name, is a play on the word
   "automate" (which is what the tool does), and "mate" makes it sound like
   the tool is your buddy that helps you out
 
-## Design Plans
+## ToDos
 
-* Event Monitoring
-    * Define a base class, called, `Event`, that has various parameters
-        * `name` - name of the event (basically the class name, converted to lowercase, minus the `"Event_"`)
-        * `fire_params` - command-line arguments with which to fire off a task once an event triggers
-        * ... TODO
-    * Then, extend this base class into various other events:
-        * `Event_PR`
-            * `Event_PR_Create`
-            * `Event_PR_StatusChange`
-            * `Event_PR_Comment_Create`
-            * ...
-        * `Event_WI`
-            * `Event_WI_Create`
-            * `Event_WI_Assign`
-            * `Event_WI_StatusChange`
-            * ...
-        * `Event_Pipeline`
-            * `Event_Pipeline_Launch`
-            * `Event_Pipeline_Finish`
-            * ...
-    * Each event class has their own set of parameters that must be given via
-      the config JSON file
+* Implement events
+    * `Event_PR`
+        * `Event_PR_Comment_New`
+        * `Event_PR_Comment_Update`
+        * `Event_PR_Comment_Resolved`
+        * `Event_PR_Comment_Reactivated`
+        * `Event_PR_Merged`
+    * `Event_WI`
+        * TODO
+    * `Event_Pipeline`
+        * TODO
+
+* Update `--show-config` to find *all* objects that extend the base `Config`
+  class and print out their options. (Add a `description` field to the `Config`
+  class, to be printed for each different Config subclass to help describe
+  where it's used)
+* Add JSON versions of all `--show` arguments (i.e. `--show-pullreqs-json`),
+  which performs the same operations, but dumps out the raw JSON from ADO
 
 ### Base Features
 
@@ -79,19 +76,4 @@ interacts with the Azure DevOps API, using the official Microsoft Python API
         * Every time I create a work item, add a comment that @'s my teammates
 
 * All things list-able will be filterable by regex
-
-#### Command-Line Options
-
-* `--format` - This sets the output format for any given object being dumped
-  to the terminal. Options are:
-    * `pretty` - The default option, which uses colors and nice formatting to
-      show the information in a pleasant way
-    * `json` - Outputs *only* JSON, so it can be easily parsed by a machine.
-
-### Extra Features
-
-Some extra ideas for features once the important stuff is done.
-
-* Threading: implement daemon mode to have a configurable number of threads
-  that events can be sent to for processing.
 
