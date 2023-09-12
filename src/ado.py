@@ -355,5 +355,4 @@ def ado_list_pullreqs(proj, repo):
               color("pullreq_owner"), pr.created_by.unique_name, color("none"),
               color("pullreq_branch_src"), pr.source_ref_name, color("gray"),
               color("pullreq_branch_dst"), pr.target_ref_name, color("none")))
-        
 

@@ -17,6 +17,7 @@ from events.event import *
 from ado import *
 from debug import dbg_print
 from utils.utils import *
+from utils.storage import *
 
 
 # ========================= Generic PR Event Objects ========================= #
@@ -54,17 +55,38 @@ class Event_PR(Event):
         Constructor.
         """
         super().__init__(conf)
+        # retrieve the project and repository according to the config
+        self.project = ado_find_project(self.config.get("project"))
+        self.repo = ado_find_repo(self.project, self.config.get("repository"))
+
+        # initialize PR-related fields
+        self.prs = []
+        self.pr_backup_key = "project_%s_repo_%s_pullreqs" % \
+                             (self.project.id, self.repo.id)
+        self.pr_backups = None
+
+    def poll(self):
+        """
+        Wrapper for poll() that updates the PR backups in storage.
+        """
+        result = super().poll()
+        # convert the list of PRs to a dictionary, then write to disk
+        prs = {}
+        for pr in self.prs:
+            prs[pr.code_review_id] = pr
+        storage_obj_write(self.pr_backup_key, prs, lock=True)
+        return result
     
     def poll_action(self):
         """
         Implementation of the abstract poll() function.
         """
-        # retrieve the project and repository according to the config
-        self.project = ado_find_project(self.config.get("project"))
-        self.repo = ado_find_repo(self.project, self.config.get("repository"))
-
         # get all PRs from the repository
         self.prs = ado_repo_get_pullreqs(self.project, self.repo)
+
+        # iterate through all PRs and load previously-stored versions of them
+        # from the last poll
+        self.pr_backups = storage_obj_read(self.pr_backup_key, lock=True)
 
         # this is an intermediate implementation - the subclasses will
         # carry on from this point (return None)
@@ -104,4 +126,34 @@ class Event_PR_Create(Event_PR):
 
         # if PRs were collected, return them (otherwise return None)
         return None if new_prs_len == 0 else new_prs
+
+
+# ============================= PR Draft Enable ============================== #
+class EventConfig_PR_Draft_On(EventConfig_PR):
+    """
+    An extension of the EventConfig_PR class specific for a PR's draft mode
+    being enabled.
+    """
+
+class Event_PR_Draft_On(Event_PR):
+    """
+    An extension of the Event_PR class specific for a PR's draft mode being
+    enabled.
+    """
+    def poll_action(self):
+        super().poll_action()
+        # if we don't have a backup of PR data from a previous poll, we can't
+        # yet detect if this event has happened
+        if self.pr_backups is None:
+            return None
+
+        results = []
+        results_len = 0
+        
+        self.dbg_print("TODO - IMPLEMENT A WAY FOR ALL PR THREADS TO SHARE THE "
+                       "SAME COPY OF PR BACKUPS, SO THEY EACH DON'T WRITE EVERY "
+                       "TIME MAYBE")
+        self.dbg_print("OR IF NOT THAT, AT LEAST MAKE THEM USE A LOCK TO PREVENT "
+                       "THE SAME FILE FROM BEING WRITTEN SIMULTANEOUSLY.")
+                       
 

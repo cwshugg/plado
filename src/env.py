@@ -79,6 +79,14 @@ env_vars = {
     env_prefix + "DEBUG_EVENT": EnvironmentVariable_Bool(
         env_prefix + "DEBUG_EVENT",
         description="Set to 1 to enable debug prints for event monitoring code."
+    ),
+    env_prefix + "DEBUG_EVENT_PR_CREATE": EnvironmentVariable_Bool(
+        env_prefix + "DEBUG_EVENT_PR_CREATE",
+        description="Set to 1 to enable debug prints for PR Creation event monitoring."
+    ),
+    env_prefix + "DEBUG_EVENT_PR_DRAFT_ON": EnvironmentVariable_Bool(
+        env_prefix + "DEBUG_EVENT_PR_DRAFT_ON",
+        description="Set to 1 to enable debug prints for PR Draft On event monitoring."
     )
 }
 

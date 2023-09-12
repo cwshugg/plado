@@ -129,8 +129,16 @@ class Event(abc.ABC):
         # some time-sensitive polls that might, for example, look at
         # timestamps in ADO to determine if a new update has occurred since
         # its last poll
-        self.last_poll = datetime.now()
-        self.last_poll.replace(tzinfo=timezone.utc)
+        self.last_poll = datetime.utcnow()
+
+    def typename(self):
+        """
+        Returns the official type name of the event.
+        """
+        name = self.__class__.__name__
+        name = name.replace("Event_", "")
+        name = name.lower().strip(" _")
+        return name
 
     def dbg_print(self, msg: str):
         """
@@ -140,19 +148,19 @@ class Event(abc.ABC):
         name = self.config.get("name")
         if name is None:
             name = self.config.get("type")
-        dbg_print("event", "[%s] %s" % (name, msg))
+        dbg_print("event_%s" % self.typename(), "[%s] %s" % (name, msg))
 
     def get_last_poll_time(self):
         """
         Returns the timestamp at which this event was last polled.
         """
-        return self.last_poll.replace(tzinfo=timezone.utc)
+        return self.last_poll.astimezone(tz=timezone.utc)
 
     def set_last_poll_time(self, dt: datetime):
         """
         Updates the event's last-polled timestamp.
         """
-        self.last_poll = dt.replace(tzinfo=timezone.utc)
+        self.last_poll = datetime.fromtimestamp(dt.timestamp(), tz=timezone.utc)
 
     def poll(self):
         """

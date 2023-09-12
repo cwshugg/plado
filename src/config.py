@@ -69,6 +69,14 @@ class Config:
         """
         self.path = None
         self.fields = {
+            "storage_dir": ConfigField(
+                "storage_dir",
+                [str],
+                description="Path to a directory for the program to use for "
+                            "storing data.",
+                required=False,
+                default=os.path.expandvars("${HOME}/.plado")
+            ),
             "ado_pat": ConfigField(
                 "ado_pat",
                 [str],
@@ -152,7 +160,7 @@ class Config:
         jdata = json.load(fp)
         fp.close()
         self.path = fpath
-        
+
         # invoke the JSON-parsing function
         self.parse_json(jdata)
 

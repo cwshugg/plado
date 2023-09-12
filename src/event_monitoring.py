@@ -20,13 +20,14 @@ from events.event_queue import EventQueue
 from events.event_thread import EventThread
 from events.events_pr import *
 from debug import dbg_print
-from utils.nugget import Nugget
 from utils.utils import *
 from utils.colors import *
+from utils.storage import *
 
 # Globals
 event_classes = { # map of type names to classes
-    "pr_create": [Event_PR_Create, EventConfig_PR_Create]
+    "pr_create":        [Event_PR_Create, EventConfig_PR_Create],
+    "pr_draft_on":      [Event_PR_Draft_On, EventConfig_PR_Draft_On]
 }
 events = []
 
@@ -84,21 +85,17 @@ def em_main():
     def em_dbg_print(msg: str):
         now = datetime.now(tz=timezone.utc)
         nowstr = now.strftime("%Y-%m-%d %H:%M:%S %p")
-        dbg_print("event", "[%s] %s" % (nowstr, msg))
+        dbg_print("event", "[%s UTC] %s" % (nowstr, msg))
     
     # ensure the poll rate is greater than zero
     poll_rate = config.get("monitor_poll_rate")
     if poll_rate <= 0:
         panic("The poll rate (%smonitor_poll_rate%s) must be greater than zero." %
               (color("config_field_name"), color("none")))
-
-    # create a nugget to use for keeping track of the last time we iterated in
-    # the below loop. If we can read a value in from a previous run, update all
-    # events' 'last_poll' values to reflect it
-    ngt_last_poll = Nugget("em_last_poll", [int])
-    last_poll = ngt_last_poll.read()
+    
+    # attempt to read a file from storage containing the last-polled datetime
+    last_poll = storage_obj_read("em_last_poll")
     if last_poll is not None:
-        last_poll = datetime.fromtimestamp(last_poll, tz=timezone.utc)
         for e in events:
             e.set_last_poll_time(last_poll)
         # write the last-poll time out to debug
@@ -131,7 +128,8 @@ def em_main():
         while equeue.size() > 0:
             pass
 
-        # update the last-poll nuggest, then sleep for the configured time
-        ngt_last_poll.write(int(datetime.now(tz=timezone.utc).timestamp()))
+        # update the last-poll time in storage, then sleep for the configured
+        # amount of time
+        storage_obj_write("em_last_poll", datetime.now(tz=timezone.utc))
         time.sleep(poll_rate)
 

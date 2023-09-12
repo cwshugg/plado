@@ -45,8 +45,12 @@ class EventThread(threading.Thread):
             # poll the event - if there's nothing new, re-loop
             result = e.poll()
             if result is None:
-                dbg_print("event", "Event has nothing new")
                 continue
+            
+            ename = e.config.get("name")
+            if ename is None:
+                ename = e.typename()
+            dbg_print("event", "Event \"%s\" has occurred." % ename)
             
             # otherwise, iterate through the returned data and fire all of the
             # event's jobs
@@ -58,4 +62,5 @@ class EventThread(threading.Thread):
             # with all subprocesses spawned, wait for them all to complete
             for job in e.jobs:
                 job.reap()
-            dbg_print("event", "Reaped %d subprocesses." % len(e.jobs))
+            dbg_print("event", "Reaped %d subprocesses for event \"%s\"." %
+                      (len(e.jobs), ename))
