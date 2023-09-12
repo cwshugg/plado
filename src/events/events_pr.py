@@ -173,7 +173,6 @@ class Event_PR_Draft_On(Event_PR):
         # if we don't have a backup of PR data from a previous poll, we can't
         # yet detect if this event has happened
         if self.pr_backups is None:
-            self.dbg_print("test")
             return None
 
         # for each pull request currently active
@@ -246,7 +245,6 @@ class Event_PR_Commit_New_Src(Event_PR):
         # if we don't have a backup of PR data from a previous poll, we can't
         # yet detect if this event has happened
         if self.pr_backups is None:
-            self.dbg_print("test")
             return None
 
         # for each pull request currently active
@@ -303,4 +301,199 @@ class Event_PR_Commit_New_Dst(Event_PR_Commit_New_Src):
         super().__init__(conf)
         self.src = False # meaning, we want to check dst branch for
                          # a new commit
+
+
+# ============================= PR Status Change ============================= #
+class EventConfig_PR_Status_Change(EventConfig_PR):
+    """
+    An extension of the EventConfig_PR class specific for a PR's status being
+    changed.
+    """
+    def __init__(self):
+        super().__init__()
+        self.fields.update({
+            "desired_status": ConfigField(
+                "desired_status",
+                [str],
+                description="Set to be the status you want this event to trigger "
+                            "on. If not specified, all status changes will "
+                            "trigger the event.",
+                required=False,
+                default=None
+            )
+        })
+
+class Event_PR_Status_Change(Event_PR):
+    """
+    An extension of the Event_PR class specific for a PR's status being changed.
+    """
+    def poll_action(self):
+        """
+        Overridden poll_action().
+        """
+        super().poll_action()
+        # if we don't have a backup of PR data from a previous poll, we can't
+        # yet detect if this event has happened
+        if self.pr_backups is None:
+            return None
+
+        # for each pull request currently active
+        results = []
+        for pr in self.prs:
+            # ignore new PRs
+            if pr.code_review_id not in self.pr_backups:
+                continue
+            pr_old = self.pr_backups[pr.code_review_id]
+            
+            # otherwise, examine the old and new statuses
+            status_new = pr.status
+            status_old = pr_old.status
+            self.dbg_print("PR-%s status: old=\"%s\", new=\"%s\"." %
+                           (pr.code_review_id, status_new, status_old))
+
+            # if they don't match, there's been a change
+            if status_new != status_old:
+                # if a desired status is specified, check for this too
+                ds = self.config.get("desired_status")
+                if ds is not None and \
+                   status_new.strip().lower() == ds.strip().lower():
+                    self.dbg_print("PR-%s's new status matches the desired status." %
+                                   pr.code_review_id)
+                    result.append(pr.as_dict())
+                else:
+                    self.dbg_print("PR-%s's status has changed." %
+                                   pr.code_review_id)
+                    result.append(pr.as_dict())
+                       
+        results_len = len(results)
+        self.dbg_print("Found %s PRs that changed status." %
+                       ("no" if results_len == 0 else str(results_len)))
+        return None if results_len == 0 else results
+
+
+# ============================ PR Reviewer Added ============================= #
+class EventConfig_PR_Reviewer_Added(EventConfig_PR):
+    """
+    An extension of the EventConfig_PR class specific for adding a PR reviewer.
+    """
+    def __init__(self):
+        super().__init__()
+        self.fields.update({
+            "user": ConfigField(
+                "user",
+                [str],
+                description="Name, email, or username of the desired user to track.",
+                required=False,
+                default=None
+            ),
+            "only_optional": ConfigField(
+                "only_optional",
+                [bool],
+                description="Set to true to only trigger when a/the user is added as "
+                            "an optional reviewer.",
+                required=False,
+                default=False
+            ),
+            "only_required": ConfigField(
+                "only_required",
+                [bool],
+                description="Set to true to only trigger when a/the user is added as "
+                            "a required reviewer.",
+                required=False,
+                default=False
+            ),
+        })
+
+class Event_PR_Reviewer_Added(Event_PR):
+    """
+    An extension of the Event_PR class specific for adding a PR reviewer.
+    """
+    def check_reviewers(self, pr, revs_new: dict, revs_old: dict):
+        """
+        Performs checks on the PR reviewers, given the new and old list.
+        Subclasses will define their own to implement other reviewer-related
+        events.
+        """
+        # iterate over the lists
+        for name in revs_new:
+            # if a new reviewer is spotted...
+            if name not in revs_old:
+                rev = revs_new[name]
+                is_required = hasattr(rev, "is_required") and rev.is_required
+
+                self.dbg_print("PR-%s: New reviewer \"%s\" is %srequired." %
+                               (str(pr.code_review_id), rev.unique_name,
+                                "NOT " if not is_required else ""))
+
+                # check for for required or optional, depending on the config
+                if self.config.get("only_optional") and is_required:
+                    continue
+                if self.config.get("only_required") and not is_required:
+                    continue
+
+                # check for a matching user, if configured
+                user = self.config.get("user")
+                unique_name = rev.unique_name.lower().strip()
+                if user is not None:
+                    user = user.strip().lower()
+                    # extract the username from an email address (if possible)
+                    # and compare against the display name, unique name, and
+                    # extracted username
+                    user_email_name = unique_name if "@" not in unique_name else \
+                                      unique_name.split("@")[0]
+                    match = rev.display_name.lower().strip() == user or \
+                            unique_name == user or \
+                            user_email_name == user
+                    # don't consider this reviewer if it wasn't a match
+                    if not match:
+                        continue
+
+                self.dbg_print("PR-%s: Found new %s reviewer%s: \"%s\"." %
+                               (str(pr.code_review_id),
+                                "required" if is_required else "optional",
+                                " with matching username" if user is not None else "",
+                                unique_name))
+                # if we found a result, return True to tell poll_action() to
+                # add this PR to the result list
+                return True
+        
+        # if we reached the bottom before returning True, then there must be no
+        # new matching reviewers
+        return False
+
+    def poll_action(self):
+        """
+        Overridden poll_action().
+        """
+        super().poll_action()
+        # if we don't have a backup of PR data from a previous poll, we can't
+        # yet detect if this event has happened
+        if self.pr_backups is None:
+            return None
+
+        # for each pull request currently active
+        results = []
+        for pr in self.prs:
+            # ignore new PRs
+            if pr.code_review_id not in self.pr_backups:
+                continue
+            pr_old = self.pr_backups[pr.code_review_id]
+
+            # grab both list of reviewers and convert to dictionaries, indexed by
+            # unique reviewer name
+            revs_new = {}
+            for rev in pr.reviewers:
+                revs_new[rev.unique_name] = rev
+            revs_old = {}
+            for rev in pr_old.reviewers:
+                revs_old[rev.unique_name] = rev
+            
+            # if the checks pass, add this PR to the list
+            if self.check_reviewers(pr, revs_new, revs_old):
+                results.append(pr.as_dict())
+            
+        results_len = len(results)
+        self.dbg_print("Found %s PRs with reviewer updates." %
+                       ("no" if results_len == 0 else str(results_len)))
+        return None if results_len == 0 else results
 
