@@ -458,6 +458,7 @@ class Event_PR_Reviewer_Added(Event_PR):
         events.
         """
         # iterate over the lists
+        result = []
         for name in revs_new:
             # if a new reviewer is spotted...
             if name not in revs_old:
@@ -482,14 +483,9 @@ class Event_PR_Reviewer_Added(Event_PR):
                                (str(pr.pull_request_id),
                                 "required" if is_required else "optional",
                                 rev.unique_name))
-
-                # return True to tell poll_action() to add this PR to the
-                # result list
-                return True
+                result.append(rev)
         
-        # if we reached the bottom before returning True, then there must be no
-        # new matching reviewers
-        return False
+        return None if len(result) == 0 else result
 
     def poll_action(self):
         """
@@ -519,8 +515,13 @@ class Event_PR_Reviewer_Added(Event_PR):
                 revs_old[rev.unique_name] = rev
             
             # if the checks pass, add this PR to the list
-            if self.check_reviewers(pr, revs_new, revs_old):
-                results.append(pr.as_dict())
+            revs = self.check_reviewers(pr, revs_new, revs_old)
+            if revs is not None:
+                data = pr.as_dict()
+                data["culprits"] = []
+                for r in revs:
+                    data["culprits"].append(r.as_dict())
+                results.append(data)
             
         results_len = len(results)
         self.dbg_print("Found %s PRs with reviewer updates." %
@@ -557,6 +558,7 @@ class Event_PR_Reviewer_Voted(Event_PR_Reviewer_Added):
         events.
         """
         # iterate over the lists
+        result = []
         for name in revs_new:
             # skip new reviewers
             if name not in revs_old:
@@ -595,9 +597,9 @@ class Event_PR_Reviewer_Voted(Event_PR_Reviewer_Added):
             # all checks passed: return True
             self.dbg_print("PR-%s: Reviewer \"%s\" has a valid/matching vote." %
                            (str(pr.pull_request_id), name))
-            return True
+            result.append(rev)
 
-        return False
+        return None if len(result) == 0 else result
 
 
 # =========================== Generic PR Comments ============================ #
@@ -714,6 +716,7 @@ class Event_PR_Comment_Added(Event_PR_Comment):
         differences. This can be overridden by subclasses to implement
         different checks.
         """
+        result = []
         for tid in threads_new:
             # if there is a configured thread ID, skip any that don't match it
             if not self.match_thread_id(threads_new[tid]):
@@ -726,7 +729,8 @@ class Event_PR_Comment_Added(Event_PR_Comment):
                 self.dbg_print("PR-%s: found new thread (ID: %s) with %d comment(s)." %
                                (str(pr.pull_request_id), str(tid),
                                 len(thread.comments)))
-                return True
+                result.append(thread)
+                continue
 
             # otherwise, if the thread already exists, but there are more
             # comments, count it
@@ -740,10 +744,10 @@ class Event_PR_Comment_Added(Event_PR_Comment):
                     self.dbg_print("PR-%s: existing thread (ID: %s) gained %d comment(s)." %
                                    (str(pr.pull_request_id), str(tid),
                                     len(threads_new[tid].comments)))
-                    return True
+                    result.append(thread)
+                    continue
 
-        # otherwise, return false - no new comments were found
-        return False
+        return None if len(result) == 0 else result
 
     def poll_action(self):
         """
@@ -773,13 +777,20 @@ class Event_PR_Comment_Added(Event_PR_Comment):
 
             # perform the check - if it passes, add it to the results (with
             # the threads appended to the dictionary representation)
-            if self.check_threads(pr, threads_new, threads_old):
+            thrds = self.check_threads(pr, threads_new, threads_old)
+            if thrds is not None:
                 prdata = pr.as_dict()
                 # convert each thread object into a dictionary
                 tdata = {}
                 for tid in threads_new:
                     tdata[tid] = threads_new[tid].as_dict()
                 prdata["threads"] = tdata
+                # convert each returned thread (the "culprits") to dictionaries
+                # and append them to the payload
+                culprits = []
+                for thrd in thrds:
+                    culprits.append(thrd.as_dict())
+                prdata["culprits"] = culprits
                 results.append(prdata)
                        
         results_len = len(results)
@@ -811,6 +822,7 @@ class Event_PR_Comment_Resolved(Event_PR_Comment_Added):
         """
         Returns True if one or more threads in the PR has a resolved comment.
         """
+        result = []
         for tid in threads_new:
             # if there is a configured thread ID, skip any that don't match it
             if not self.match_thread_id(threads_new[tid]):
@@ -829,9 +841,9 @@ class Event_PR_Comment_Resolved(Event_PR_Comment_Added):
             s_new = threads_new[tid].status.strip().lower()
             s_old = threads_old[tid].status.strip().lower()
             if self.check_status(pr, threads_new[tid], s_new, s_old):
-                return True
+                result.append(threads_new[tid])
 
-        return False
+        return None if len(result) == 0 else result
 
 
 # ========================== PR Comment Unresolved =========================== #
@@ -880,6 +892,7 @@ class Event_PR_Comment_Edited(Event_PR_Comment_Added):
         """
         Returns True if one or more threads in the PR has a modified comment.
         """
+        result = []
         for tid in threads_new:
             # if there is a configured thread ID, skip any that don't match it
             if not self.match_thread_id(threads_new[tid]):
@@ -906,10 +919,9 @@ class Event_PR_Comment_Edited(Event_PR_Comment_Added):
                 if self.compare_comments(pr, threads_new[tid],
                                          comments_new[cid],
                                          comments_old[cid]):
-                    return True
+                    result.append(comments_new[cid])
 
-        # otherwise, return false - no new comments were found
-        return False
+        return None if len(result) == 0 else result
 
 # ============================= PR Comment Liked ============================= #
 class EventConfig_PR_Comment_Liked(EventConfig_PR_Comment_Edited):
