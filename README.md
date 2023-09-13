@@ -1,4 +1,4 @@
-# PLADO - "Painless Azure DevOps" Command-Line Interface
+# PLADO - Program Launcher for Azure DevOps
 
 This contains code involving my idea for writing a command-line application that
 interacts with the Azure DevOps API, using the official Microsoft Python API
@@ -9,6 +9,7 @@ interacts with the Azure DevOps API, using the official Microsoft Python API
 * PLADO is a cool acronym, but it's not really that meaningful if it's just
   "painless". Could it mean something else?
     * Perhaps "Perceiver of L\_\_\_ on Azure DevOps" (what would "L" stand for?)
+    * Ahh, got it: "Program Launcher for Azure DevOps". Duh.
 * What about "ADOMate"? It's got ADO in the name, is a play on the word
   "automate" (which is what the tool does), and "mate" makes it sound like
   the tool is your buddy that helps you out
