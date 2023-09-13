@@ -137,6 +137,8 @@ colors = {
     "pullreq_owner":        "\033[0m",
     "pullreq_branch_src":   color_rgb(150, 135, 125),
     "pullreq_branch_dst":   color_rgb(135, 150, 125),
+    "team":                 color_rgb(225, 225, 100),
+    "team_id":              color_rgb(125, 150, 50),
     "url":                  color_rgb(200, 200, 255)
 }
 

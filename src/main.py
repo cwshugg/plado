@@ -55,7 +55,10 @@ def args_init():
                    type=str, default=None, required=False, metavar="REPO_NAME_OR_ID")
     p.add_argument("-b", "--branch",
                    help="Sets the ADO repository branch to interact with.",
-                   type=str, default=None, required=False, metavar="REPO_NAME")
+                   type=str, default=None, required=False, metavar="REPO_NAME_OR_ID")
+    p.add_argument("-t", "--team",
+                   help="Sets the ADO team to interact with.",
+                   type=str, default=None, required=False, metavar="TEAM_NAME_OR_ID")
 
     # monitor mode arguments
     p.add_argument("-m", "--monitor",
@@ -74,6 +77,9 @@ def args_init():
                    default=False, action="store_true")
     p.add_argument("--show-pullreqs",
                    help="Lists all Pull Requests in the specified repository.",
+                   default=False, action="store_true")
+    p.add_argument("--show-teams",
+                   help="Lists all teams within the given project.",
                    default=False, action="store_true")
     
     # helper arguments
@@ -252,6 +258,10 @@ def main():
         check_project(project)
         check_repo(repo)
         branch = ado_find_branch(project, repo, args["branch"])
+    team = None
+    if "team" in args and args["team"] is not None:
+        check_project(project)
+        team = ado_find_team(project, args["team"])
     
     # ------------------------------- Routines ------------------------------- #
     if "show_projects" in args and args["show_projects"]:
@@ -271,6 +281,10 @@ def main():
         check_repo(repo)
         ado_list_pullreqs(project, repo)
         return 0
+    if "show_teams" in args and args["show_teams"]:
+        check_project(project)
+        ado_list_teams(project)
+        return 0
 
     # ----------------------------- Monitor Mode ----------------------------- #
     # if monitor mode is specified, the program will transform into an event
@@ -286,6 +300,8 @@ def main():
         ado_show_branch(project, repo, branch)
     elif repo is not None:
         ado_show_repo(project, repo)
+    elif team is not None:
+        ado_show_team(project, team)
     elif project is not None:
         ado_show_project(project)
     else:

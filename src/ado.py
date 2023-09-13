@@ -81,11 +81,11 @@ def ado_find_project(txt: str):
     """
     cc = ado_client_core()
     try:
-        dbg_print("ado", "Searching for project \"%s\"." % txt)
         proj = cc.get_project(txt)
-        dbg_print("ado", "Found project with name \"%s%s%s\" and ID \"%s%s%s\"." %
-                  (color("project"), proj.name, color("none"),
-                   color(proj.id), proj.id, color("none")))
+        if proj is not None:
+            dbg_print("ado", "Found project with name \"%s%s%s\" and ID \"%s%s%s\"." %
+                      (color("project"), proj.name, color("none"),
+                       color(proj.id), proj.id, color("none")))
         return proj
     except Exception as e:
         panic("Failed to retrieve the project \"%s%s%s\"." %
@@ -98,11 +98,11 @@ def ado_find_repo(proj, txt: str):
     """
     cg = ado_client_git()
     try:
-        dbg_print("ado", "Searching for repository: \"%s\"." % txt)
         repo = cg.get_repository(txt, project=proj.id)
-        dbg_print("ado", "Found project with name \"%s%s%s\" and ID \"%s%s%s\"." %
-                  (color("repo"), repo.name, color("none"),
-                   color(repo.id), repo.id, color("none")))
+        if repo is not None:
+            dbg_print("ado", "Found project with name \"%s%s%s\" and ID \"%s%s%s\"." %
+                      (color("repo"), repo.name, color("none"),
+                       color(repo.id), repo.id, color("none")))
         return repo
     except Exception as e:
         panic("Failed to retrieve the repository \"%s%s%s\" from project %s%s%s." %
@@ -116,15 +116,32 @@ def ado_find_branch(proj, repo, txt: str):
     """
     cg = ado_client_git()
     try:
-        dbg_print("ado", "Searching for branch: \"%s\"." % txt)
         branch = cg.get_branch(repo.id, txt, project=proj.id)
-        dbg_print("ado", "Found branch with name \"%s%s%s\"." %
-                  (color("branch"), branch.name, color("none")))
+        if branch is not None:
+            dbg_print("ado", "Found branch with name \"%s%s%s\"." %
+                      (color("branch"), branch.name, color("none")))
         return branch
     except Exception as e:
         panic("Failed to retrieve the branch \"%s%s%s\" from repository %s%s%s." %
               (color("branch"), txt, color("none"),
                color("repo"), repo.name, color("none")), exception=e)
+
+def ado_find_team(proj, txt: str):
+    """
+    Takes in a project and team name/ID and searches for the matching team.
+    """
+    cc = ado_client_core()
+    try:
+        team = cc.get_team(proj.id, txt)
+        if team is not None:
+            dbg_print("ado", "Found team with name \"%s%s%s\" and ID \"%s%s%s\"." %
+                      (color("team"), team.name, color("none"),
+                       color(team.id), team.id, color("none")))
+        return team
+    except Exception as e:
+        panic("Failed to retrieve the team \"%s%s%s\"." %
+              (color("team"), txt, color("none")), exception=e)
+
 
 def ado_project_get_repos(proj):
     """
@@ -133,8 +150,9 @@ def ado_project_get_repos(proj):
     cg = ado_client_git()
     try:
         repos = cg.get_repositories(proj.id)
-        dbg_print("ado", "Found %d repositories in project %s%s%s." %
-                  (len(repos), color("project"), proj.name, color("none")))
+        if repos is not None:
+            dbg_print("ado", "Found %d repositories in project %s%s%s." %
+                      (len(repos), color("project"), proj.name, color("none")))
         return repos
     except Exception as e:
         panic("Failed to retrieve repositories from project %s%s%s." %
@@ -147,8 +165,9 @@ def ado_repo_get_branches(proj, repo):
     cg = ado_client_git()
     try:
         branches = cg.get_branches(repo.id, project=proj.id)
-        dbg_print("ado", "Found %d branches in repository %s%s%s." %
-                  (len(branches), color("repo"), repo.name, color("none")))
+        if branches is not None:
+            dbg_print("ado", "Found %d branches in repository %s%s%s." %
+                      (len(branches), color("repo"), repo.name, color("none")))
         return branches
     except Exception as e:
         panic("Failed to retrieve branches from repo %s%s%s." %
@@ -163,8 +182,9 @@ def ado_repo_get_pullreqs(proj, repo):
     try:
         search_criteria = None
         prs = cg.get_pull_requests(repo.id, search_criteria, project=proj.id)
-        dbg_print("ado", "Found %d pull requests in repository %s%s%s." %
-                  (len(prs), color("repo"), repo.name, color("none")))
+        if prs is not None:
+            dbg_print("ado", "Found %d pull requests in repository %s%s%s." %
+                      (len(prs), color("repo"), repo.name, color("none")))
         return prs
     except Exception as e:
         panic("Failed to retrieve pull requests from repo %s%s%s." %
@@ -178,12 +198,28 @@ def ado_pullreq_get_threads(proj, repo, pr):
     cg = ado_client_git()
     try:
         thrds = cg.get_threads(repo.id, pr.pull_request_id, project=proj.id)
-        dbg_print("ado", "Found %d threads in PR %s%s%s." %
-                  (len(thrds), color("pullreq_id"), pr.pull_request_id, color("none")))
+        if thrds is not None:
+            dbg_print("ado", "Found %d threads in PR %s%s%s." %
+                      (len(thrds), color("pullreq_id"), pr.pull_request_id, color("none")))
         return thrds
     except Exception as e:
         panic("Failed to retrieve threads from PR %s%s%s." %
               (color("pullreq_id"), pr.pull_request_id, color("none")), exception=e)
+
+def ado_project_get_teams(proj):
+    """
+    Takes in a project and retrieves its teams.
+    """
+    cc = ado_client_core()
+    try:
+        teams = cc.get_teams(proj.id)
+        if teams is not None:
+            dbg_print("ado", "Found %d teams in project %s%s%s." %
+                      (len(teams), color("project"), proj.name, color("none")))
+        return teams
+    except Exception as e:
+        panic("Failed to retrieve teams from project %s%s%s." %
+              (color("project"), proj.name, color("none")), exception=e)
 
 
 # ================================= Features ================================= #
@@ -370,4 +406,31 @@ def ado_list_pullreqs(proj, repo):
               color("pullreq_owner"), pr.created_by.unique_name, color("none"),
               color("pullreq_branch_src"), pr.source_ref_name, color("gray"),
               color("pullreq_branch_dst"), pr.target_ref_name, color("none")))
+
+def ado_list_teams(proj):
+    """
+    Lists the given project's teams.
+    """
+    teams = ado_project_get_teams(proj)
+    teams_len = len(teams)
+    print("Found %d team%s:" % (teams_len, "" if teams_len == 1 else "s"))
+
+    for team in teams:
+        print("%s%s%s%s - %s%s%s" %
+              (str_tab(bullet=bullet_char),
+               color("team"), str(team.name), color("none"),
+               color("team_id"), str(team.id), color("none")))
+
+def ado_show_team(proj, team):
+    print("%sTeam:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("team"), team.name, color("none")))
+    
+    # print team info
+    print("%sID:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color(team.id), team.id, color("none")))
+    print("%sDescription:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("none"), team.description, color("none")))
 
