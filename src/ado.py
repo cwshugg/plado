@@ -416,10 +416,14 @@ def ado_list_teams(proj):
     print("Found %d team%s:" % (teams_len, "" if teams_len == 1 else "s"))
 
     for team in teams:
+        desc = team.description.strip().split("\n")[0]
+        if desc is None or len(desc) == 0:
+            desc = "%s(no description)%s" % (color("dkgray"), color("none"))
+
         print("%s%s%s%s - %s%s%s" %
               (str_tab(bullet=bullet_char),
                color("team"), str(team.name), color("none"),
-               color("team_id"), str(team.id), color("none")))
+               color("none"), desc, color("none")))
 
 def ado_show_team(proj, team):
     print("%sTeam:%s %s%s%s" %
@@ -430,7 +434,12 @@ def ado_show_team(proj, team):
     print("%sID:%s %s%s%s" %
           (color("gray"), color("none"),
            color(team.id), team.id, color("none")))
+
+    # print the team's description
+    desc = team.description.strip()
+    if desc is None or len(desc) == 0:
+        desc = "%s(no description)%s" % (color("dkgray"), color("none"))
     print("%sDescription:%s %s%s%s" %
           (color("gray"), color("none"),
-           color("none"), team.description, color("none")))
+           color("none"), desc, color("none")))
 
