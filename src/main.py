@@ -59,6 +59,9 @@ def args_init():
     p.add_argument("-t", "--team",
                    help="Sets the ADO team to interact with.",
                    type=str, default=None, required=False, metavar="TEAM_NAME_OR_ID")
+    p.add_argument("-B", "--backlog",
+                   help="Sets the ADO backlog to interact with.",
+                   type=str, default=None, required=False, metavar="BACKLOG_NAME_OR_ID")
 
     # monitor mode arguments
     p.add_argument("-m", "--monitor",
@@ -80,6 +83,9 @@ def args_init():
                    default=False, action="store_true")
     p.add_argument("--show-teams",
                    help="Lists all teams within the given project.",
+                   default=False, action="store_true")
+    p.add_argument("--show-backlogs",
+                   help="List all backlogs for the corresponding team.",
                    default=False, action="store_true")
     
     # helper arguments
@@ -174,7 +180,7 @@ def help_check():
 # ============================ Main Functionality ============================ #
 def check_project(proj: any):
     """
-    Takes in an object and does some basic checks so verify it's an ADO project
+    Takes in an object and does some basic checks to verify it's an ADO project
     object. Panics if it is not.
     """
     if proj is None:
@@ -182,11 +188,19 @@ def check_project(proj: any):
 
 def check_repo(repo: any):
     """
-    Takes in an object and does some basic checks so verify it's an ADO repo
+    Takes in an object and does some basic checks to verify it's an ADO repo
     object. Panics if it is not.
     """
     if repo is None:
         panic("You must specify a repository name or ID via --repo.")
+
+def check_team(team: any):
+    """
+    Takes in an object and does some basic checks to verify it's an ADO team
+    object. Panics if it is not.
+    """
+    if team is None:
+        panic("You must specify a team name or ID via --team.")
 
 def main():
     """
@@ -262,6 +276,11 @@ def main():
     if "team" in args and args["team"] is not None:
         check_project(project)
         team = ado_find_team(project, args["team"])
+    backlog = None
+    if "backlog" in args and args["backlog"] is not None:
+        check_project(project)
+        check_team(team)
+        backlog = ado_find_backlog(project, team, args["backlog"])
     
     # ------------------------------- Routines ------------------------------- #
     if "show_projects" in args and args["show_projects"]:
@@ -285,6 +304,11 @@ def main():
         check_project(project)
         ado_list_teams(project)
         return 0
+    if "show_backlogs" in args and args["show_backlogs"]:
+        check_project(project)
+        check_team(team)
+        ado_list_backlogs(project, team)
+        return 0
 
     # ----------------------------- Monitor Mode ----------------------------- #
     # if monitor mode is specified, the program will transform into an event
@@ -300,6 +324,8 @@ def main():
         ado_show_branch(project, repo, branch)
     elif repo is not None:
         ado_show_repo(project, repo)
+    elif backlog is not None:
+        ado_show_backlog(project, team, backlog)
     elif team is not None:
         ado_show_team(project, team)
     elif project is not None:

@@ -20,12 +20,14 @@ from utils.utils import *
 
 # ADO imports
 from azure.devops.connection import Connection
+from azure.devops.v7_1.work.models import TeamContext
 from msrest.authentication import BasicAuthentication
 
 # Globals
 conn = None         # global connection reference
 c_core = None       # global core client
 c_git = None        # global git client
+c_work = None       # global work client
 
 
 # ========================== Connection Management =========================== #
@@ -71,6 +73,16 @@ def ado_client_git():
         c_git = conn.clients.get_git_client()
         dbg_print("ado", "Created git client.")
     return c_git
+
+def ado_client_work():
+    """
+    Returns an Azure DevOps work client object.
+    """
+    global c_work
+    if c_work is None:
+        c_work = conn.clients.get_work_client()
+        dbg_print("ado", "Created work client.")
+    return c_work
 
 
 # ================================= Lookups ================================== #
@@ -141,6 +153,28 @@ def ado_find_team(proj, txt: str):
     except Exception as e:
         panic("Failed to retrieve the team \"%s%s%s\"." %
               (color("team"), txt, color("none")), exception=e)
+
+def ado_find_backlog(proj, team, txt: str):
+    """
+    Takes in a team and retrieves a backlog based on the given text.
+    """
+    cw = ado_client_work()
+    try:
+        # create a TeamContext object from the team object
+        tc = TeamContext(project=proj,
+                         project_id=proj.id,
+                         team=team,
+                         team_id=team.id)
+
+        bl = cw.get_backlog(tc, txt)
+        if bl is not None:
+            dbg_print("ado", "Found backlog \"%s%s%s\"." %
+                      (color("backlog"), bl.name, color("none")))
+        return bl
+    except Exception as e:
+        panic("Failed to retrieve the backlog \"%s%s%s\"." %
+              (color("backlog"), txt, color("none")), exception=e)
+
 
 
 def ado_project_get_repos(proj):
@@ -220,6 +254,27 @@ def ado_project_get_teams(proj):
     except Exception as e:
         panic("Failed to retrieve teams from project %s%s%s." %
               (color("project"), proj.name, color("none")), exception=e)
+
+def ado_team_get_backlogs(proj, team):
+    """
+    Takes in a team and retrieves its backlogs.
+    """
+    cw = ado_client_work()
+    try:
+        # create a TeamContext object from the team object
+        tc = TeamContext(project=proj,
+                         project_id=proj.id,
+                         team=team,
+                         team_id=team.id)
+
+        bls = cw.get_backlogs(tc)
+        if bls is not None:
+            dbg_print("ado", "Found %d backlogs for team %s%s%s." %
+                      (len(bls), color("team"), team.name, color("none")))
+        return bls
+    except Exception as e:
+        panic("Failed to retrieve backlogs from team %s%s%s." %
+              (color("team"), team.name, color("none")), exception=e)
 
 
 # ================================= Features ================================= #
@@ -426,6 +481,9 @@ def ado_list_teams(proj):
                color("none"), desc, color("none")))
 
 def ado_show_team(proj, team):
+    """
+    Displays information about the given team.
+    """
     print("%sTeam:%s %s%s%s" %
           (color("gray"), color("none"),
            color("team"), team.name, color("none")))
@@ -442,4 +500,61 @@ def ado_show_team(proj, team):
     print("%sDescription:%s %s%s%s" %
           (color("gray"), color("none"),
            color("none"), desc, color("none")))
+
+def ado_list_backlogs(proj, team):
+    """
+    Lists the given team's backlogs.
+    """
+    bls = ado_team_get_backlogs(proj, team)
+    bls_len = len(bls)
+    print("Found %d backlog%s:" % (bls_len, "" if bls_len == 1 else "s"))
+
+    for bl in bls:
+        # extract the color, if it has it
+        blcolor = color("backlog")
+        if hasattr(bl, "color"):
+            blcolor = color_hex(str(bl.color))
+
+        print("%s%s%s%s - %s%s%s - Rank: %s%s%s - Type: %s%s%s" %
+              (str_tab(bullet=bullet_char),
+              blcolor, bl.name, color("none"),
+              color("backlog_id"), str(bl.id), color("none"),
+              color("backlog_rank"), str(bl.rank), color("none"),
+              color("backlog_type"), bl.type, color("none")))
+
+def ado_show_backlog(proj, team, bl):
+    """
+    Displays information on the given backlog.
+    """
+    # extract the color, if it has it
+    blcolor = color("backlog")
+    if hasattr(bl, "color"):
+        blcolor = color_hex(str(bl.color))
+
+    print("%sBacklog:%s %s%s%s" %
+          (color("gray"), color("none"),
+           blcolor, bl.name, color("none")))
+    print("%sID:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("backlog_id"), bl.id, color("none")))
+    print("%sRank:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("backlog_rank"), str(bl.rank), color("none")))
+    print("%sType:%s %s%s%s" %
+          (color("gray"), color("none"),
+           color("backlog_type"), bl.type, color("none")))
+
+    # print all work item types
+    print("%sWork Item Types:%s" %
+          (color("gray"), color("none")))
+    for wit in bl.work_item_types:
+        # print an indicator if this is the default type
+        default_str = ""
+        if wit.name == bl.default_work_item_type.name:
+            default_str = " %s(default)%s" % (color("gray"), color("none"))
+
+        print("%s%s%s%s%s" %
+              (str_tab(bullet=bullet_char),
+              color("backlog_wi_type"), wit.name, color("none"),
+              default_str))
 

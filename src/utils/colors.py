@@ -73,10 +73,24 @@ def color_rgb(r: int, g: int, b: int):
     Takes in R, G, and B values (0-255) and uses it to generate and return a
     color escape sequence.
     """
-    r = max(0, min(255, r))
-    g = max(0, min(255, g))
-    b = max(0, min(255, b))
+    r = max(1, min(255, r))
+    g = max(1, min(255, g))
+    b = max(1, min(255, b))
+    
+    # brighten things up, if needed
+    brightness = sum([r, g, b]) / 3
+    if brightness < 128:
+        mult = min(255, max(1, (128 - brightness) / brightness))
+        r *= mult
+        g *= mult
+        b *= mult
+
     return "\033[38;2;%d;%d;%dm" % (r, g, b)
+
+def color_hex(txt: str):
+    txt = txt.strip().replace("#", "")
+    rgb = tuple(int(txt[i:i+1], 16) for i in (0, 2, 4))
+    return color_rgb(rgb[0], rgb[1], rgb[2])
 
 def color(s: str):
     """
@@ -139,7 +153,11 @@ colors = {
     "pullreq_branch_dst":   color_rgb(135, 150, 125),
     "team":                 color_rgb(225, 225, 100),
     "team_id":              color_rgb(125, 150, 50),
+    "backlog":              color_rgb(27,  186, 159),
+    "backlog_id":           color_rgb(100, 115, 129),
+    "backlog_rank":         color_rgb(10,  166, 139),
+    "backlog_type":         color_rgb(50,  176, 129),
+    "backlog_wi_type":      color_rgb(200, 200, 200),
     "url":                  color_rgb(200, 200, 255)
 }
-
 
