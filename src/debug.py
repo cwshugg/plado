@@ -16,17 +16,23 @@ from env import env
 from utils.colors import color
 
 dbg_flags = {
-    "config": False,                    # config file debugging
-    "ado": False,                       # ADO debugging
-    "event": False,                     # event monitoring
-    "event_pr_create": False,           # event monitoring for pr_create
-    "event_pr_draft_on": False,         # event monitoring for pr_draft_on
-    "event_pr_draft_off": False,        # event monitoring for pr_draft_off
-    "event_pr_commit_new_src": False,   # event monitoring for pr_commit_new_src
-    "event_pr_commit_new_dst": False,   # event monitoring for pr_commit_new_dst
-    "event_pr_status_change": False,    # event monitoring for pr_status_change
-    "event_pr_reviewer_added": False,   # event monitoring for pr_reviewer_added
-    "event_pr_reviewer_voted": False,   # event monitoring for pr_reviewer_voted
+    "config": False,                        # config file debugging
+    "ado": False,                           # ADO debugging
+    "event": False,                         # event monitoring
+    "event_pr_create": False,               # event monitoring for pr_create
+    "event_pr_draft_on": False,             # event monitoring for pr_draft_on
+    "event_pr_draft_off": False,            # event monitoring for pr_draft_off
+    "event_pr_commit_new_src": False,       # event monitoring for pr_commit_new_src
+    "event_pr_commit_new_dst": False,       # event monitoring for pr_commit_new_dst
+    "event_pr_status_change": False,        # event monitoring for pr_status_change
+    "event_pr_reviewer_added": False,       # event monitoring for pr_reviewer_added
+    "event_pr_reviewer_voted": False,       # event monitoring for pr_reviewer_voted
+    "event_pr_comment_added": False,        # event monitoring for pr_comment_added
+    "event_pr_comment_edited": False,       # event monitoring for pr_comment_edited
+    "event_pr_comment_liked": False,        # event monitoring for pr_comment_liked
+    "event_pr_comment_unliked": False,      # event monitoring for pr_comment_unliked
+    "event_pr_comment_resolved": False,     # event monitoring for pr_comment_resolved
+    "event_pr_comment_unresolved": False,   # event monitoring for pr_comment_unresolved
 }
 
 def dbg_set(flag: str, enabled: bool):

@@ -170,6 +170,21 @@ def ado_repo_get_pullreqs(proj, repo):
         panic("Failed to retrieve pull requests from repo %s%s%s." %
               (color("repo"), repo.name, color("none")), exception=e)
 
+def ado_pullreq_get_threads(proj, repo, pr):
+    """
+    Takes in a project, repo, and PR, and retrieve and returns a list of
+    threads in the pull request.
+    """
+    cg = ado_client_git()
+    try:
+        thrds = cg.get_threads(repo.id, pr.pull_request_id, project=proj.id)
+        dbg_print("ado", "Found %d threads in PR %s%s%s." %
+                  (len(thrds), color("pullreq_id"), pr.pull_request_id, color("none")))
+        return thrds
+    except Exception as e:
+        panic("Failed to retrieve threads from PR %s%s%s." %
+              (color("pullreq_id"), pr.pull_request_id, color("none")), exception=e)
+
 
 # ================================= Features ================================= #
 def ado_list_projects():
@@ -351,7 +366,7 @@ def ado_list_pullreqs(proj, repo):
     for pr in prs:
         print("%s%s%s%s - %s%s%s (%s%s%s --> %s%s%s)" %
               (str_tab(bullet=bullet_char),
-              color("pullreq_id"), str(pr.code_review_id), color("none"),
+              color("pullreq_id"), str(pr.pull_request_id), color("none"),
               color("pullreq_owner"), pr.created_by.unique_name, color("none"),
               color("pullreq_branch_src"), pr.source_ref_name, color("gray"),
               color("pullreq_branch_dst"), pr.target_ref_name, color("none")))

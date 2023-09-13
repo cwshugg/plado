@@ -26,14 +26,20 @@ from utils.storage import *
 
 # Globals
 event_classes = { # map of type names to classes
-    "pr_create":            [Event_PR_Create, EventConfig_PR_Create],
-    "pr_draft_on":          [Event_PR_Draft_On, EventConfig_PR_Draft_On],
-    "pr_draft_off":         [Event_PR_Draft_Off, EventConfig_PR_Draft_Off],
-    "pr_commit_new_src":    [Event_PR_Commit_New_Src, EventConfig_PR_Commit_New_Src],
-    "pr_commit_new_dst":    [Event_PR_Commit_New_Dst, EventConfig_PR_Commit_New_Dst],
-    "pr_status_change":     [Event_PR_Status_Change, EventConfig_PR_Status_Change],
-    "pr_reviewer_added":    [Event_PR_Reviewer_Added, EventConfig_PR_Reviewer_Added],
-    "pr_reviewer_voted":    [Event_PR_Reviewer_Voted, EventConfig_PR_Reviewer_Voted],
+    "pr_create":                [Event_PR_Create, EventConfig_PR_Create],
+    "pr_draft_on":              [Event_PR_Draft_On, EventConfig_PR_Draft_On],
+    "pr_draft_off":             [Event_PR_Draft_Off, EventConfig_PR_Draft_Off],
+    "pr_commit_new_src":        [Event_PR_Commit_New_Src, EventConfig_PR_Commit_New_Src],
+    "pr_commit_new_dst":        [Event_PR_Commit_New_Dst, EventConfig_PR_Commit_New_Dst],
+    "pr_status_change":         [Event_PR_Status_Change, EventConfig_PR_Status_Change],
+    "pr_reviewer_added":        [Event_PR_Reviewer_Added, EventConfig_PR_Reviewer_Added],
+    "pr_reviewer_voted":        [Event_PR_Reviewer_Voted, EventConfig_PR_Reviewer_Voted],
+    "pr_comment_added":         [Event_PR_Comment_Added, EventConfig_PR_Comment_Added],
+    "pr_comment_edited":        [Event_PR_Comment_Edited, EventConfig_PR_Comment_Edited],
+    "pr_comment_liked":         [Event_PR_Comment_Liked, EventConfig_PR_Comment_Liked],
+    "pr_comment_unliked":       [Event_PR_Comment_Unliked, EventConfig_PR_Comment_Unliked],
+    "pr_comment_resolved":      [Event_PR_Comment_Resolved, EventConfig_PR_Comment_Resolved],
+    "pr_comment_unresolved":    [Event_PR_Comment_Unresolved, EventConfig_PR_Comment_Unresolved],
 }
 events = []
 
