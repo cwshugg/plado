@@ -70,11 +70,6 @@ class Event_PR(Event):
         Wrapper for poll() that updates the PR backups in storage.
         """
         result = super().poll()
-        # convert the list of PRs to a dictionary, then write to disk
-        prs = {}
-        for pr in self.prs:
-            prs[pr.code_review_id] = pr
-        storage_obj_write(self.pr_backup_key, prs, lock=True)
         return result
     
     def poll_action(self):
@@ -91,6 +86,17 @@ class Event_PR(Event):
         # this is an intermediate implementation - the subclasses will
         # carry on from this point (return None)
         return None
+
+    def cleanup_action(self):
+        """
+        Overridden cleanup_action().
+        """
+        # convert the list of PRs to a dictionary, then write to disk, for use
+        # during the next event poll
+        prs = {}
+        for pr in self.prs:
+            prs[pr.code_review_id] = pr
+        storage_obj_write(self.pr_backup_key, prs, lock=True)
 
 
 # =============================== PR Creation ================================ #

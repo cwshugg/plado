@@ -134,6 +134,17 @@ def em_main():
         while equeue.size() > 0:
             pass
 
+        # wait until all threads are finished with their work and are once again
+        # waiting for the queue to be filled
+        for et in ethreads:
+            et.wait_is_waiting_on_queue()
+        em_dbg_print("All events processed and all threads are waiting.")
+
+        # now that we know all threads are asleep and all events are processed,
+        # run each events' cleanup routine
+        for e in events:
+            e.cleanup()
+
         # update the last-poll time in storage, then sleep for the configured
         # amount of time
         storage_obj_write("em_last_poll", datetime.now(tz=timezone.utc))

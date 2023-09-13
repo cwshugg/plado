@@ -130,6 +130,7 @@ class Event(abc.ABC):
         # timestamps in ADO to determine if a new update has occurred since
         # its last poll
         self.last_poll = datetime.utcnow()
+        self.last_poll_result = None
 
     def typename(self):
         """
@@ -162,6 +163,18 @@ class Event(abc.ABC):
         """
         self.last_poll = datetime.fromtimestamp(dt.timestamp(), tz=timezone.utc)
 
+    def get_last_poll_result(self):
+        """
+        Returns the event's latest result.
+        """
+        return self.last_poll_result
+
+    def set_last_poll_result(self, val: any):
+        """
+        Sets the event's latest result.
+        """
+        self.last_poll_result = val
+
     def poll(self):
         """
         A wrapper around poll_action() that maintains a 'last_poll' value, which
@@ -170,6 +183,7 @@ class Event(abc.ABC):
         # invoke the abstract method poll_action() (where subclasses will
         # implement their custom logic)
         result = self.poll_action()
+        self.last_poll_result = result
 
         # update last-polled time to be now, in UTC
         self.set_last_poll_time(datetime.now())
@@ -199,4 +213,22 @@ class Event(abc.ABC):
         twice, for a total of six different programs being run.
         """
         return None
+
+    def cleanup(self):
+        """
+        A function that's invoked by the main thread to perform any final
+        cleanup steps for the event. Subclasses can implement the
+        cleanup_action() function to include event-specific cleanup routines.
+        """
+        self.dbg_print("Cleaning up.")
+        self.cleanup_action()
+
+    def cleanup_action(self):
+        """
+        Performs any event-specific cleanup routines. This can be overridden
+        by the child class. Because this function is called by the main thread,
+        it's important to not have anything that may block for a long period of
+        time here.
+        """
+        pass
 

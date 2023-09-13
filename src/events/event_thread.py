@@ -30,6 +30,42 @@ class EventThread(threading.Thread):
         """
         super().__init__(target=self.run)
         self.equeue = queue
+        self.is_waiting_on_queue = False
+        self.is_waiting_on_queue_lock = threading.Lock()
+        self.is_waiting_on_queue_condition = threading.Condition(lock=self.is_waiting_on_queue_lock)
+
+    def get_is_waiting_on_queue(self):
+        """
+        Uses a mutex lock to safely extract the boolean flag indicating whether
+        or not the thread is currently waiting on the event queue.
+
+        This is used by the main thread to guage when these event threads are
+        finished with their work and are waiting for more.
+        """
+        self.is_waiting_on_queue_lock.acquire()
+        val = self.is_waiting_on_queue
+        self.is_waiting_on_queue_lock.release()
+        return val
+
+    def set_is_waiting_on_queue(self, val: bool):
+        """
+        Uses a mutex lock to safely set the internal 'is_waiting_on_queue' flag.
+        """
+        self.is_waiting_on_queue_lock.acquire()
+        self.is_waiting_on_queue = val
+        self.is_waiting_on_queue_condition.notify()
+        self.is_waiting_on_queue_lock.release()
+
+    def wait_is_waiting_on_queue(self):
+        """
+        Waits on an internal condition variable until 'is_waiting_on_queue'
+        is set to True.
+        """
+        self.is_waiting_on_queue_lock.acquire()
+        while not self.is_waiting_on_queue:
+            self.is_waiting_on_queue_condition.wait()
+        self.is_waiting_on_queue_lock.release()
+
 
     def run(self):
         """
@@ -40,7 +76,12 @@ class EventThread(threading.Thread):
         # loop forever
         while True:
             # pop an event from the queue (wait if it's empty)
+            self.set_is_waiting_on_queue(True)
+            dbg_print("event", "Waiting on event queue.")
             e = self.equeue.pop(wait=True)
+            self.set_is_waiting_on_queue(False)
+            dbg_print("event", "Found an event to process: \"%s\"" %
+                      e.typename())
 
             # poll the event - if there's nothing new, re-loop
             result = e.poll()
@@ -64,3 +105,4 @@ class EventThread(threading.Thread):
                 job.reap()
             dbg_print("event", "Reaped %d subprocesses for event \"%s\"." %
                       (len(e.jobs), ename))
+
