@@ -19,6 +19,7 @@ from events.event_config import *
 from events.event_queue import EventQueue
 from events.event_thread import EventThread
 from events.events_pr import *
+from events.events_branch import *
 from debug import dbg_print
 from utils.utils import *
 from utils.colors import *
@@ -40,6 +41,7 @@ event_classes = { # map of type names to classes
     "pr_comment_unliked":       [Event_PR_Comment_Unliked, EventConfig_PR_Comment_Unliked],
     "pr_comment_resolved":      [Event_PR_Comment_Resolved, EventConfig_PR_Comment_Resolved],
     "pr_comment_unresolved":    [Event_PR_Comment_Unresolved, EventConfig_PR_Comment_Unresolved],
+    "branch_commit_new":        [Event_Branch_Commit_New, EventConfig_Branch_Commit_New],
 }
 events = []
 

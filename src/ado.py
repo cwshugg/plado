@@ -21,6 +21,7 @@ from utils.utils import *
 # ADO imports
 from azure.devops.connection import Connection
 from azure.devops.v7_1.work.models import TeamContext
+from azure.devops.v7_1.git.models import GitQueryCommitsCriteria
 from msrest.authentication import BasicAuthentication
 
 # Globals
@@ -175,8 +176,6 @@ def ado_find_backlog(proj, team, txt: str):
         panic("Failed to retrieve the backlog \"%s%s%s\"." %
               (color("backlog"), txt, color("none")), exception=e)
 
-
-
 def ado_project_get_repos(proj):
     """
     Takes in a project and returns a list of all repositories within it.
@@ -206,6 +205,30 @@ def ado_repo_get_branches(proj, repo):
     except Exception as e:
         panic("Failed to retrieve branches from repo %s%s%s." %
               (color("repo"), repo.name, color("none")), exception=e)
+
+def ado_repo_get_commits(proj, repo, search_criteria=None):
+    """
+    Takes in a project and repo and retrieves commits.
+    Optional search criteria can be specified.
+    """
+    cg = ado_client_git()
+    try:
+        commits = cg.get_commits(repo.id, search_criteria, project=proj.id)
+        if commits is not None:
+            dbg_print("ado", "Found %d commits for repository %s%s%s." %
+                      (len(commits), color("repo"), repo.name, color("none")))
+        return commits
+    except Exception as e:
+        panic("Failed to retrieve commits from repo %s%s%s." %
+              (color("repo"), repo.name, color("none")), exception=e)
+
+def ado_branch_get_commits(proj, repo, branch):
+    """
+    Takes in a project, repo, and branch, and retrieves a list of all commits
+    for that branch.
+    """
+    # TODO
+    pass
 
 
 def ado_repo_get_pullreqs(proj, repo):

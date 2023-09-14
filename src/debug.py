@@ -33,6 +33,7 @@ dbg_flags = {
     "event_pr_comment_unliked": False,      # event monitoring for pr_comment_unliked
     "event_pr_comment_resolved": False,     # event monitoring for pr_comment_resolved
     "event_pr_comment_unresolved": False,   # event monitoring for pr_comment_unresolved
+    "event_branch_commit_new": False,       # event monitoring for branch_commit_new
 }
 
 def dbg_set(flag: str, enabled: bool):
