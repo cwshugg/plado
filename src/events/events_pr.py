@@ -484,6 +484,19 @@ class Event_PR_Reviewer_Added(Event_PR):
                                 "required" if is_required else "optional",
                                 rev.unique_name))
                 result.append(rev)
+            else:
+                # or, if the reviewer was already accounted for, but they
+                # previously declined, but now have un-declined, we count this
+                # as a new reviewer
+                rnew = revs_new[name]
+                rold = revs_old[name]
+                if rold.has_declined == True and rnew.has_declined == False:
+                    self.dbg_print("PR-%s: Found new %s valid reviewer who "
+                                   "previously declined: \"%s\"." %
+                                   (str(pr.pull_request_id),
+                                   "required" if is_required else "optional",
+                                   rnew.unique_name))
+                    result.append(rnew)
         
         return None if len(result) == 0 else result
 

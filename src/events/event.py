@@ -78,7 +78,7 @@ class EventJob():
         try:
             dbg_print("event", "Sending JSON payload to subprocess.")
             payload = json.dumps(event_data)
-            self.process.communicate(input=json.dumps(payload).encode(),
+            self.process.communicate(input=payload.encode(),
                                      timeout=self.config.get("timeout"))
         except subprocess.TimeoutExpired as e:
             dbg_print("event", "Subprocess timeouted out while writing JSON payload.")
