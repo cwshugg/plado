@@ -29,7 +29,7 @@ python3 src/main.py -c ./my_config.json
 You can also use `-h`/`--help` to see all available command-line arguments:
 
 ```bash
-python3 src/main.py -c ./my_config.json
+python3 src/main.py -h
 ```
 
 ## Documentation
