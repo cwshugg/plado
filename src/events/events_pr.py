@@ -148,7 +148,7 @@ class Event_PR_Create(Event_PR):
             # if the creation date is more recent than the last-polled time,
             # add it to the results list
             if diff < 0:
-                new_prs.append(pr.as_dict())
+                new_prs.append(self.package_result(pr.as_dict()))
                 new_prs_len += 1
 
         # if PRs were collected, return them (otherwise return None)
@@ -207,7 +207,7 @@ class Event_PR_Draft_On(Event_PR):
             if pr.pull_request_id not in self.pr_backups:
                 if pr.is_draft == self.desired_state and \
                    self.config.get("include_new_pullreqs"):
-                    results.append(pr.as_dict())
+                    results.append(self.package_result(pr.as_dict()))
                 continue
 
             # otherwise, grab the old copy of the PR and compare the draft mode
@@ -215,7 +215,7 @@ class Event_PR_Draft_On(Event_PR):
             pr_old = self.pr_backups[pr.pull_request_id]
             if pr_old.is_draft != self.desired_state and \
                pr.is_draft == self.desired_state:
-                results.append(pr.as_dict())
+                results.append(self.package_result(pr.as_dict()))
                        
         results_len = len(results)
         self.dbg_print("Found %s PRs that were recently switched to draft mode." %
@@ -300,7 +300,7 @@ class Event_PR_Commit_New_Src(Event_PR):
                 self.dbg_print("PR-%s has a new %s commit!" %
                                (str(pr.pull_request_id),
                                 "source" if self.src else "target"))
-                results.append(pr.as_dict())
+                results.append(self.package_result(pr.as_dict()))
 
         results_len = len(results)
         self.dbg_print("Found %s PRs that recently received new commits." %
@@ -383,11 +383,11 @@ class Event_PR_Status_Change(Event_PR):
                    status_new.strip().lower() == ds.strip().lower():
                     self.dbg_print("PR-%s's new status matches the desired status." %
                                    pr.pull_request_id)
-                    result.append(pr.as_dict())
+                    result.append(self.package_result(pr.as_dict()))
                 else:
                     self.dbg_print("PR-%s's status has changed." %
                                    pr.pull_request_id)
-                    result.append(pr.as_dict())
+                    result.append(self.package_result(pr.as_dict()))
                        
         results_len = len(results)
         self.dbg_print("Found %s PRs that changed status." %
@@ -517,11 +517,10 @@ class Event_PR_Reviewer_Added(Event_PR):
             # if the checks pass, add this PR to the list
             revs = self.check_reviewers(pr, revs_new, revs_old)
             if revs is not None:
-                data = pr.as_dict()
-                data["culprits"] = []
+                culprits = []
                 for r in revs:
-                    data["culprits"].append(r.as_dict())
-                results.append(data)
+                    culprits.append(r.as_dict())
+                results.append(self.package_result(pr.as_dict(), culprits=culprits))
             
         results_len = len(results)
         self.dbg_print("Found %s PRs with reviewer updates." %
@@ -790,8 +789,7 @@ class Event_PR_Comment_Added(Event_PR_Comment):
                 culprits = []
                 for thrd in thrds:
                     culprits.append(thrd.as_dict())
-                prdata["culprits"] = culprits
-                results.append(prdata)
+                results.append(self.package_result(prdata, culprits=culprits))
                        
         results_len = len(results)
         self.dbg_print("Found %s PRs with updated comments." %
@@ -841,7 +839,7 @@ class Event_PR_Comment_Resolved(Event_PR_Comment_Added):
             s_new = threads_new[tid].status.strip().lower()
             s_old = threads_old[tid].status.strip().lower()
             if self.check_status(pr, threads_new[tid], s_new, s_old):
-                result.append(threads_new[tid])
+                result.append(self.package_result(threads_new[tid]))
 
         return None if len(result) == 0 else result
 

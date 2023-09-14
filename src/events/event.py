@@ -175,6 +175,18 @@ class Event(abc.ABC):
         """
         self.last_poll_result = val
 
+    def package_result(self, data: dict, culprits=None):
+        """
+        Takes in data as a dictionary, and an optional secondary dictlist/dict,
+        and packs them into a JSON object. The returned objected should be used
+        when adding new data to the poll_action() result list.
+        """
+        result = {"data": data}
+        if culprits is not None:
+            assert type(culprits) in [list, dict]
+            result["culprits"] = culprits
+        return result
+
     def poll(self):
         """
         A wrapper around poll_action() that maintains a 'last_poll' value, which

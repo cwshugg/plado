@@ -166,7 +166,7 @@ class Event_Branch_Commit_New(Event_Branch):
 
             # if the IDs differ, we've got a new commit
             if commit_new.commit_id != commit_old.commit_id:
-                results.append(br)
+                results.append(self.package_result(br.as_dict()))
 
         results_len = len(results)
         self.dbg_print("Found %s branch(es) with new commits." %
