@@ -52,6 +52,10 @@ python3 src/main.py -c ./my_config.json -m
     * Write markdown documentation
     * Write Linux man page
     * Example config file(s)
+* Information retrieval
+    * When displaying a team, display all of its members (use the core client's
+      `get_team_members_with_extended_properties()` function)
+    * Add `-u`/`--user` to display user IDs
 * Implement more events
     * `Event_WI`
         * `Event_WI_Create`
@@ -61,6 +65,8 @@ python3 src/main.py -c ./my_config.json -m
         * `Event_WI_Comment_Edit`
         * ...
     * `Event_Pipeline`
+        * `Event_Pipeline_Run_Start`
+        * `Event_Pipeline_Run_End`
         * ...
 
 * Update `--show-config` to find *all* objects that extend the base `Config`
