@@ -106,10 +106,7 @@ def args_parse(parser: argparse.ArgumentParser):
     return a
 
 
-# ============================== Help Routines =============================== #
-# "Help Routines" are tied to command-line arguments that print information
-# about the program to help the user understand how to use it.
-
+# ================================= Helpers ================================== #
 def help_show_config():
     """
     Lists all available config fields and their properties.
@@ -175,7 +172,27 @@ def help_check():
     if "show_env" in args and args["show_env"]:
         help_show_env()
         sys.exit(0)
-                
+
+def help_intro():
+    """
+    Shows a helpful intro screen.
+    """
+    cb = color("ltblue")
+    cn = color("none")
+    print("Welcome to %sPLADO%s, a %sP%srogram %sL%sauncher for %sA%szure %sD%sev%sO%sps." %
+          (cb, cn, cb, cn, cb, cn, cb, cn, cb, cn, cb, cn))
+    
+    # show the organization
+    config = config_load()
+    print("You are configured for the %s%s%s organization." %
+          (color("organization"), config.get("ado_org"), color("none")))
+    print("Run with %s-h%s/%s--help%s to see all available command-line options." %
+          (color("gray"), cn, color("gray"), cn))
+        
+    # show the projects in the organization
+    print("")
+    ado_list_projects()
+
 
 # ============================ Main Functionality ============================ #
 def check_project(proj: any):
@@ -331,7 +348,8 @@ def main():
     elif project is not None:
         ado_show_project(project)
     else:
-        ado_list_projects()
+        # if NOTHING is given besides the config, show a nice intro screen
+        help_intro()
 
 # ------------------------------- Runner Code -------------------------------- #
 # Invoke the main routine
