@@ -11,5 +11,5 @@ if [ ! -f "${plado_src}" ]; then
 fi
 
 # run it, along with all other command-line arguments
-python3 ${plado_src} $@
+python3 ${plado_src} "$@"
 
