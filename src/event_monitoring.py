@@ -85,6 +85,7 @@ def em_init():
     for entry in evs:
         events.append(em_create_event(entry))
     dbg_print("event", "Initialized %d event(s)." % len(events))
+    print("Initialized %d event(s). Monitoring..." % len(events))
 
 def em_main():
     """

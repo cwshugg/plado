@@ -13,9 +13,12 @@ To communicate with Azre DevOps, this uses the official Python API found
 
 ## Getting Started
 
-Before running, make sure to install all dependencies from the requirements file:
+To get started, clone the repository and install all requirements in the
+requirements file:
 
 ```bash
+git clone https://github.com/cwshugg/plado
+cd ./plado
 python3 -m pip install -r ./requirements.txt
 ```
 
@@ -30,6 +33,13 @@ You can also use `-h`/`--help` to see all available command-line arguments:
 
 ```bash
 python3 src/main.py -h
+```
+
+Once you've set up your configuration file to track events, invoke the program
+with the `-m`/`--monitor` option to enable event-monitoring mode:
+
+```bash
+python3 src/main.py -c ./my_config.json -m
 ```
 
 ## Documentation
