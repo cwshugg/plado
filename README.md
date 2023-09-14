@@ -11,6 +11,27 @@ I created this as a way to automate certain DevOps-related processes at work.
 To communicate with Azre DevOps, this uses the official Python API found
 [here](https://github.com/microsoft/azure-devops-python-api).
 
+## Getting Started
+
+Before running, make sure to install all dependencies from the requirements file:
+
+```bash
+python3 -m pip install -r ./requirements.txt
+```
+
+Then, to run, simply invoke the `main.py` Python script. You'll need to specify
+configuration file via `-c`/`--config` to begin using the script.
+
+```bash
+python3 src/main.py -c ./my_config.json
+```
+
+You can also use `-h`/`--help` to see all available command-line arguments:
+
+```bash
+python3 src/main.py -c ./my_config.json
+```
+
 ## Documentation
 
 * TODO
@@ -20,6 +41,7 @@ To communicate with Azre DevOps, this uses the official Python API found
 * Documentation
     * Write markdown documentation
     * Write Linux man page
+    * Example config file(s)
 * Implement more events
     * `Event_WI`
         * `Event_WI_Create`
