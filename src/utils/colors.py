@@ -159,10 +159,12 @@ colors = {
     "backlog_id":           color_rgb(100, 115, 129),
     "backlog_rank":         color_rgb(10,  166, 139),
     "backlog_type":         color_rgb(50,  176, 129),
-    "backlog_wi_type":      color_rgb(200, 200, 200),
     "user_displayname":     color_rgb(175, 175, 200),
     "user_uniquename":      color_rgb(175, 175, 225),
     "user_id":              color_rgb(150, 150, 160),
+    "wi_type":              color_rgb(150, 215, 225),
+    "wi_id":                color_rgb(200, 215, 225),
+    "wi_title":             color_rgb(150, 165, 175),
     "url":                  color_rgb(200, 200, 255)
 }
 

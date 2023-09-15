@@ -29,6 +29,7 @@ conn = None         # global connection reference
 c_core = None       # global core client
 c_git = None        # global git client
 c_work = None       # global work client
+c_wit = None        # global work-item-tracking client
 
 
 # ========================== Connection Management =========================== #
@@ -85,6 +86,16 @@ def ado_client_work():
         dbg_print("ado", "Created work client.")
     return c_work
 
+def ado_client_work_item_tracking():
+    """
+    Returns an Azure DevOps WIT client object.
+    """
+    global c_wit
+    if c_wit is None:
+        c_wit = conn.clients.get_work_item_tracking_client()
+        dbg_print("ado", "Created work item tracking client.")
+    return c_wit
+
 
 # ================================= Lookups ================================== #
 def ado_find_project(txt: str):
@@ -118,7 +129,7 @@ def ado_find_repo(proj, txt: str):
                        color(repo.id), repo.id, color("none")))
         return repo
     except Exception as e:
-        panic("Failed to retrieve the repository \"%s%s%s\" from project %s%s%s." %
+        panic("Failed to retrieve the repository \"%s%s%s\" from project \"%s%s%s\"." %
               (color("repo"), txt, color("none"),
                color("project"), proj.name, color("none")), exception=e)
 
@@ -135,7 +146,7 @@ def ado_find_branch(proj, repo, txt: str):
                       (color("branch"), branch.name, color("none")))
         return branch
     except Exception as e:
-        panic("Failed to retrieve the branch \"%s%s%s\" from repository %s%s%s." %
+        panic("Failed to retrieve the branch \"%s%s%s\" from repository \"%s%s%s\"." %
               (color("branch"), txt, color("none"),
                color("repo"), repo.name, color("none")), exception=e)
 
@@ -147,11 +158,11 @@ def ado_find_pullreq(proj, repo, txt: str):
     try:
         pr = cg.get_pull_request(repo.id, txt, project=proj.id)
         if pr is not None:
-            dbg_print("ado", "Found Pull Request with ID %s%s%s." %
+            dbg_print("ado", "Found Pull Request with ID \"%s%s%s\"." %
                       (color("pullreq_id"), pr.pull_request_id, color("none")))
         return pr
     except Exception as e:
-        panic("Failed to retrieve the Pull Request \"%s%s%s\" from repository %s%s%s." %
+        panic("Failed to retrieve the Pull Request \"%s%s%s\" from repository \"%s%s%s\"." %
               (color("pullreq_id"), txt, color("none"),
                color("repo"), repo.name, color("none")), exception=e)
 
@@ -200,11 +211,11 @@ def ado_project_get_repos(proj):
     try:
         repos = cg.get_repositories(proj.id)
         if repos is not None:
-            dbg_print("ado", "Found %d repositories in project %s%s%s." %
+            dbg_print("ado", "Found %d repositories in project \"%s%s%s\"." %
                       (len(repos), color("project"), proj.name, color("none")))
         return repos
     except Exception as e:
-        panic("Failed to retrieve repositories from project %s%s%s." %
+        panic("Failed to retrieve repositories from project \"%s%s%s\"." %
               (color("project"), proj.name, color("none")))
 
 def ado_repo_get_branches(proj, repo):
@@ -215,11 +226,11 @@ def ado_repo_get_branches(proj, repo):
     try:
         branches = cg.get_branches(repo.id, project=proj.id)
         if branches is not None:
-            dbg_print("ado", "Found %d branches in repository %s%s%s." %
+            dbg_print("ado", "Found %d branches in repository \"%s%s%s\"." %
                       (len(branches), color("repo"), repo.name, color("none")))
         return branches
     except Exception as e:
-        panic("Failed to retrieve branches from repo %s%s%s." %
+        panic("Failed to retrieve branches from repo \"%s%s%s\"." %
               (color("repo"), repo.name, color("none")), exception=e)
 
 def ado_repo_get_commits(proj, repo, search_criteria=None):
@@ -231,11 +242,11 @@ def ado_repo_get_commits(proj, repo, search_criteria=None):
     try:
         commits = cg.get_commits(repo.id, search_criteria, project=proj.id)
         if commits is not None:
-            dbg_print("ado", "Found %d commits for repository %s%s%s." %
+            dbg_print("ado", "Found %d commits for repository \"%s%s%s\"." %
                       (len(commits), color("repo"), repo.name, color("none")))
         return commits
     except Exception as e:
-        panic("Failed to retrieve commits from repo %s%s%s." %
+        panic("Failed to retrieve commits from repo \"%s%s%s\"." %
               (color("repo"), repo.name, color("none")), exception=e)
 
 def ado_repo_get_pullreqs(proj, repo):
@@ -247,11 +258,11 @@ def ado_repo_get_pullreqs(proj, repo):
         search_criteria = None
         prs = cg.get_pull_requests(repo.id, search_criteria, project=proj.id)
         if prs is not None:
-            dbg_print("ado", "Found %d pull requests in repository %s%s%s." %
+            dbg_print("ado", "Found %d pull requests in repository \"%s%s%s\"." %
                       (len(prs), color("repo"), repo.name, color("none")))
         return prs
     except Exception as e:
-        panic("Failed to retrieve pull requests from repo %s%s%s." %
+        panic("Failed to retrieve pull requests from repo \"%s%s%s\"." %
               (color("repo"), repo.name, color("none")), exception=e)
 
 def ado_pullreq_get_threads(proj, repo, pr):
@@ -263,11 +274,11 @@ def ado_pullreq_get_threads(proj, repo, pr):
     try:
         thrds = cg.get_threads(repo.id, pr.pull_request_id, project=proj.id)
         if thrds is not None:
-            dbg_print("ado", "Found %d threads in PR %s%s%s." %
+            dbg_print("ado", "Found %d threads in PR \"%s%s%s\"." %
                       (len(thrds), color("pullreq_id"), pr.pull_request_id, color("none")))
         return thrds
     except Exception as e:
-        panic("Failed to retrieve threads from PR %s%s%s." %
+        panic("Failed to retrieve threads from PR \"%s%s%s\"." %
               (color("pullreq_id"), pr.pull_request_id, color("none")), exception=e)
 
 def ado_project_get_teams(proj):
@@ -278,11 +289,11 @@ def ado_project_get_teams(proj):
     try:
         teams = cc.get_teams(proj.id)
         if teams is not None:
-            dbg_print("ado", "Found %d teams in project %s%s%s." %
+            dbg_print("ado", "Found %d teams in project \"%s%s%s\"." %
                       (len(teams), color("project"), proj.name, color("none")))
         return teams
     except Exception as e:
-        panic("Failed to retrieve teams from project %s%s%s." %
+        panic("Failed to retrieve teams from project \"%s%s%s\"." %
               (color("project"), proj.name, color("none")), exception=e)
 
 def ado_team_get_backlogs(proj, team):
@@ -299,11 +310,11 @@ def ado_team_get_backlogs(proj, team):
 
         bls = cw.get_backlogs(tc)
         if bls is not None:
-            dbg_print("ado", "Found %d backlogs for team %s%s%s." %
+            dbg_print("ado", "Found %d backlogs for team \"%s%s%s\"." %
                       (len(bls), color("team"), team.name, color("none")))
         return bls
     except Exception as e:
-        panic("Failed to retrieve backlogs from team %s%s%s." %
+        panic("Failed to retrieve backlogs from team \"%s%s%s\"." %
               (color("team"), team.name, color("none")), exception=e)
 
 def ado_team_get_members(proj, team):
@@ -314,12 +325,46 @@ def ado_team_get_members(proj, team):
     try:
         mbrs = cc.get_team_members_with_extended_properties(proj.id, team.id)
         if mbrs is not None:
-            dbg_print("ado", "Found %d members for team %s%s%s." %
+            dbg_print("ado", "Found %d members for team \"%s%s%s\"." %
                       (len(mbrs), color("team"), team.name, color("none")))
         return mbrs
     except Exception as e:
-        panic("Failed to retrieve members from team %s%s%s." %
+        panic("Failed to retrieve members from team \"%s%s%s\"." %
               (color("team"), team.name, color("none")), exception=e)
+
+def ado_backlog_get_workitems(proj, team, bl):
+    """
+    Takes in a backlog and retrieves all work items contained within.
+    """
+    cw = ado_client_work()
+    cwit = ado_client_work_item_tracking()
+    try:
+        # create a TeamContext object from the team object
+        tc = TeamContext(project=proj,
+                         project_id=proj.id,
+                         team=team,
+                         team_id=team.id)
+        
+        # first, retrieve the work items associated with the backlog (this
+        # returns minimal information, but it includes the work items' IDs,
+        # which we need for the next API call)
+        wi_group = cw.get_backlog_level_work_items(tc, bl.id)
+        wi_links = wi_group.work_items
+        if wi_links is not None:
+            dbg_print("ado", "Found %d work item links for backlog \"%s%s%s\"." %
+                      (len(wi_links), color("backlog"), bl.name, color("none")))
+
+        # next, create an array of IDs from the results of the first, then
+        ids = [wi.target.id for wi in wi_links]
+        wi_data = cwit.get_work_items(ids, project=proj.id)
+        if wi_data is not None:
+            dbg_print("ado", "Found %d work item data for backlog \"%s%s%s\"." %
+                      (len(wi_data), color("backlog"), bl.name, color("none")))
+        return wi_data
+    except Exception as e:
+        panic("Failed to retrieve work items from backlog \"%s%s%s\"." %
+              (color("backlog"), bl.name, color("none")), exception=e)
+
 
 # ================================= Features ================================= #
 def ado_list_projects():
@@ -605,17 +650,42 @@ def ado_show_backlog(proj, team, bl):
           (color("gray"), color("none"),
            color("backlog_type"), bl.type, color("none")))
 
-    # print all work item types
-    print("%sWork Item Types:%s" %
+    # retrieve all work items and split them up by type
+    wis = ado_backlog_get_workitems(proj, team, bl)
+    wi_dict = {}
+    for wit in bl.work_item_types:
+        wi_dict[wit.name] = {"type": wit, "work_items": []}
+    for wi in wis:
+        t = wi.fields["System.WorkItemType"]
+        wi_dict[t]["work_items"].append(wi)
+
+    # print all work item types and items
+    print("%sWork Items By Type:%s" %
           (color("gray"), color("none")))
     for wit in bl.work_item_types:
+        items = wi_dict[wit.name]["work_items"]
+        items_len = len(items)
+
         # print an indicator if this is the default type
         default_str = ""
         if wit.name == bl.default_work_item_type.name:
             default_str = " %s(default)%s" % (color("gray"), color("none"))
-
-        print("%s%s%s%s%s" %
+        
+        # print the header for this category, and a count of all work items
+        # in the category
+        wi_count_str = "" if items_len == 0 else " - %d work items" % items_len
+        print("%s%s%s%s%s%s" %
               (str_tab(bullet=bullet_char),
-              color("backlog_wi_type"), wit.name, color("none"),
-              default_str))
+              color("wi_type"), wit.name, color("none"),
+              default_str, wi_count_str))
+
+        # print each work item
+        for wi in items:
+            title = wi.fields["System.Title"]
+            state = wi.fields["System.State"]
+            print("%s%s%s%s [%s%s%s] - %s%s%s" %
+                  (str_tab(count=2, bullet=bullet_char),
+                   color("wi_id"), str(wi.id), color("none"),
+                   color(state), state, color("none"),
+                   color("wi_title"), title, color("none")))
 
