@@ -139,6 +139,22 @@ def ado_find_branch(proj, repo, txt: str):
               (color("branch"), txt, color("none"),
                color("repo"), repo.name, color("none")), exception=e)
 
+def ado_find_pullreq(proj, repo, txt: str):
+    """
+    Searches for a pull request given the name or ID string and returns it.
+    """
+    cg = ado_client_git()
+    try:
+        pr = cg.get_pull_request(repo.id, txt, project=proj.id)
+        if pr is not None:
+            dbg_print("ado", "Found Pull Request with ID %s%s%s." %
+                      (color("pullreq_id"), pr.pull_request_id, color("none")))
+        return pr
+    except Exception as e:
+        panic("Failed to retrieve the Pull Request \"%s%s%s\" from repository %s%s%s." %
+              (color("pullreq_id"), txt, color("none"),
+               color("repo"), repo.name, color("none")), exception=e)
+
 def ado_find_team(proj, txt: str):
     """
     Takes in a project and team name/ID and searches for the matching team.

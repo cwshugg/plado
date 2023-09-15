@@ -6,6 +6,7 @@ import os
 import sys
 import time
 from datetime import datetime
+import signal
 
 # Library path setup
 srcdir = os.path.realpath(os.path.dirname(__file__))
@@ -44,6 +45,36 @@ event_classes = { # map of type names to classes
     "branch_commit_new":        [Event_Branch_Commit_New, EventConfig_Branch_Commit_New],
 }
 events = []
+events_total_time = 0       # global number of seconds passed
+events_trigger_count = 0    # global number of triggered events
+event_threads = []          # global list of event threads
+event_queue = None          # global event queue
+
+def em_kill_threads():
+    """
+    Notifies all event threads to shut down, then joins them all.
+    """
+    for et in event_threads:
+        et.kill()
+    event_queue.kill()
+    for et in event_threads:
+        et.join()
+
+def em_sigint_handler(sig, frame):
+    """
+    SIGINIT handler for graceful exits.
+    """
+    dbg_print("event", "SIGINT detected. Halting all event threads.")
+
+    # notify all event threads that it's time to stop
+    em_kill_threads()
+
+    print("\nMonitoring complete. %d event%s were triggered over %d seconds." %
+          (events_trigger_count,
+           "" if events_trigger_count == 1 else "s",
+           events_total_time))
+    sys.exit(0)
+
 
 def em_create_event(edata: dict):
     """
@@ -131,6 +162,19 @@ def em_main():
         et = EventThread(equeue)
         ethreads.append(et)
         et.start()
+    
+    # set some globals
+    global event_queue
+    event_queue = equeue
+    global event_threads
+    event_threads = ethreads
+    global events_trigger_count
+    events_trigger_count = 0
+    global events_total_time
+    events_total_time = 0
+
+    # install SIGINT (Ctrl-C) handler
+    signal.signal(signal.SIGINT, em_sigint_handler)
 
     while True:
         em_dbg_print("Polling for events.")
@@ -153,9 +197,11 @@ def em_main():
         # run each events' cleanup routine
         for e in events:
             e.cleanup()
+            events_trigger_count += 1 if e.get_last_poll_result() is not None else 0
 
         # update the last-poll time in storage, then sleep for the configured
         # amount of time
         storage_obj_write("em_last_poll", datetime.now(tz=timezone.utc))
         time.sleep(poll_rate)
+        events_total_time += poll_rate
 

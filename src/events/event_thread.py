@@ -33,6 +33,8 @@ class EventThread(threading.Thread):
         self.is_waiting_on_queue = False
         self.is_waiting_on_queue_lock = threading.Lock()
         self.is_waiting_on_queue_condition = threading.Condition(lock=self.is_waiting_on_queue_lock)
+        self.kill_lock = threading.Lock()
+        self.kill_flag = False
 
     def get_is_waiting_on_queue(self):
         """
@@ -65,7 +67,23 @@ class EventThread(threading.Thread):
         while not self.is_waiting_on_queue:
             self.is_waiting_on_queue_condition.wait()
         self.is_waiting_on_queue_lock.release()
+    
+    def kill(self):
+        """
+        Flips the thread's 'kill' flag to True.
+        """
+        self.kill_lock.acquire()
+        self.kill_flag = True
+        self.kill_lock.release()
 
+    def should_stop(self):
+        """
+        Checks the thread's kill flag and returns its value.
+        """
+        # if the kill flag has been set, we're done
+        self.kill_lock.acquire()
+        should_stop = self.kill_flag
+        self.kill_lock.release()
 
     def run(self):
         """
@@ -75,11 +93,20 @@ class EventThread(threading.Thread):
 
         # loop forever
         while True:
-            # pop an event from the queue (wait if it's empty)
+            # pop an event from the queue (wait on the queue's internal
+            # condition variable, only if this thread's kill switch hasn't
+            # been thrown yet)
             self.set_is_waiting_on_queue(True)
             dbg_print("event", "Waiting on event queue.")
-            e = self.equeue.pop(wait=True)
+            e = self.equeue.pop(wait=(not self.should_stop()))
             self.set_is_waiting_on_queue(False)
+            
+            # if 'None' is returned, then either the queue is empty (only
+            # would occur when this thread is NOT waiting on the queue), or the
+            # kill switch has been thrown. So, loop back to the top
+            if e is None:
+                dbg_print("event", "Kill switch thrown. Exiting.")
+                break
             dbg_print("event", "Found an event to process: \"%s\"" %
                       e.typename())
 

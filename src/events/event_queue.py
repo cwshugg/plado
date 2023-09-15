@@ -40,6 +40,7 @@ class EventQueue():
         self.queue = []
         self.lock = threading.Lock()
         self.condition = threading.Condition(lock=self.lock)
+        self.kill_flag = False
 
     def push(self, event: Event):
         """
@@ -61,18 +62,15 @@ class EventQueue():
         self.lock.acquire()
         
         # if specified, block until the queue has something in it
-        while wait and len(self.queue) == 0:
+        while wait and (len(self.queue) == 0 or not self.kill_flag):
             self.condition.wait()
-        
-        # if instructed to wait, block on the condition variable until notified.
-        # otherwise, unlock and return None
-        while len(self.queue) == 0:
-            if wait:
-                self.condition.wait()
-            else:
-                self.lock.release()
-                return None
 
+        # if the queue is empty or the kill flag is set, return None
+        if len(self.queue) == 0 or self.kill_flag:
+            self.lock.release()
+            return None
+
+        # otherwise, pop the next queue entry and release the lock
         result = self.queue.pop(0)
         self.lock.release()
         return result
@@ -92,5 +90,15 @@ class EventQueue():
         """
         self.lock.acquire()
         self.queue = []
+        self.lock.release()
+
+    def kill(self):
+        """
+        Toggle's the queue's kill switch, which forces all threads out of
+        any waits inside pop().
+        """
+        self.lock.acquire()
+        self.kill_flag = True
+        self.condition.notify_all()
         self.lock.release()
 

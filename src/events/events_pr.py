@@ -68,34 +68,23 @@ class Event_PR(Event):
 
         # initialize PR-related fields
         self.prs = []
-        self.pr_backup_key = "project_%s_repo_%s_pullreqs" % \
-                             (self.project.id, self.repo.id)
+        config_pr = self.config.get("pullreq")
+        self.pr_backup_key = "project_%s_repo_%s_pullreqs%s" % \
+                             (self.project.id, self.repo.id,
+                              "" if config_pr is None else "_%s" % config_pr)
         self.pr_backups = None
-
-    def filtered_prs(self):
-        """
-        Used to determine what PRs to examine during loops in poll_action().
-        Returns either ALL PRs in the list, or a list containing only the
-        PR specified in the config.
-        """
-        pr_id = self.config.get("pullreq")
-        if pr_id is None:
-            return self.prs
-        
-        # if a PR was specified in the config, search for it and return a list
-        # of ONLY those PRs
-        for pr in self.prs:
-            if str(pr.pull_request_id).strip().lower() == \
-               str(pr_id).strip().lower():
-                return [pr]
-        return []
 
     def poll_action(self):
         """
         Implementation of the abstract poll() function.
         """
-        # get all PRs from the repository
-        self.prs = ado_repo_get_pullreqs(self.project, self.repo)
+        # get all PRs from the repository (or, if a specific one was specified,
+        # retrieve only that PR)
+        config_pr = self.config.get("pullreq")
+        if config_pr is None:
+            self.prs = ado_repo_get_pullreqs(self.project, self.repo)
+        else:
+            self.prs = [ado_find_pullreq(self.project, self.repo, config_pr)]
 
         # iterate through all PRs and load previously-stored versions of them
         # from the last poll
@@ -134,7 +123,7 @@ class Event_PR_Create(Event_PR):
         super().poll_action()
         new_prs = []
         new_prs_len = 0
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             pr.creation_date = pr.creation_date.replace(tzinfo=timezone.utc)
             creation = pr.creation_date
             
@@ -201,7 +190,7 @@ class Event_PR_Draft_On(Event_PR):
 
         # for each pull request currently active
         results = []
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             # if the PR was *just* created, add it to the results if it was
             # created in draft mode and the correct config option is set
             if pr.pull_request_id not in self.pr_backups:
@@ -273,7 +262,7 @@ class Event_PR_Commit_New_Src(Event_PR):
 
         # for each pull request currently active
         results = []
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             # ignore new PRs
             if pr.pull_request_id not in self.pr_backups:
                 continue
@@ -363,7 +352,7 @@ class Event_PR_Status_Change(Event_PR):
 
         # for each pull request currently active
         results = []
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             # ignore new PRs
             if pr.pull_request_id not in self.pr_backups:
                 continue
@@ -512,7 +501,7 @@ class Event_PR_Reviewer_Added(Event_PR):
 
         # for each pull request currently active
         results = []
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             # ignore new PRs
             if pr.pull_request_id not in self.pr_backups:
                 continue
@@ -646,7 +635,7 @@ class Event_PR_Comment(Event_PR):
         super().poll_action()
         # iterate through all PRs
         self.pr_threads = {}
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             # retrieve the PR's list of threads and convert it to a dictionary
             threads = ado_pullreq_get_threads(self.project,
                                               self.repo,
@@ -773,7 +762,7 @@ class Event_PR_Comment_Added(Event_PR_Comment):
         
         # for each pull request currently active
         results = []
-        for pr in self.filtered_prs():
+        for pr in self.prs:
             # ignore PRs that were just created
             if pr.pull_request_id not in self.pr_backups:
                 continue

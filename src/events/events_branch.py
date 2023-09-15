@@ -65,16 +65,12 @@ class Event_Branch(Event):
         self.project = ado_find_project(self.config.get("project"))
         self.repo = ado_find_repo(self.project, self.config.get("repository"))
 
-        # retrieve the branch
-        self.branch = None
-        config_branch = self.config.get("branch")
-        if config_branch is not None:
-            self.branch = ado_find_branch(self.project, self.repo, config_branch)
-
         # initialize branch storage fields
+        config_br = self.config.get("branch")
         self.branches = []
-        self.branches_backup_key = "project_%s_repo_%s_branches" % \
-                             (self.project.id, self.repo.id)
+        self.branches_backup_key = "project_%s_repo_%s_branches%s" % \
+                             (self.project.id, self.repo.id,
+                              "" if config_br is None else "_%s" % config_br)
         self.branches_backups = None
 
     def cmp_branch(self, br1, br2):
@@ -83,28 +79,17 @@ class Event_Branch(Event):
         """
         return br1.name.strip() == br2.name.strip()
 
-    def filtered_branches(self):
-        """
-        Used to determine what branches to examine during loops in poll_action().
-        Returns either ALL branches in the list, or a list containing only the
-        branch specified in the config.
-        """
-        if self.branch is None:
-            return self.branches
-        
-        # if a branch WAS specified in the config, search for it and return
-        # *only* that branch in a list
-        for br in self.branches:
-            if self.cmp_branch(self.branch, br):
-                return [br]
-        return []
-
     def poll_action(self):
         """
         Implementation of the abstract poll() function.
         """
-        # get all branches from the repository
-        self.branches = ado_repo_get_branches(self.project, self.repo)
+        # get all branches from the repository (or, if a specific branch is
+        # specified, only retrieve that one)
+        config_br = self.config.get("branch")
+        if config_br is None:
+            self.branches = ado_repo_get_branches(self.project, self.repo)
+        else:
+            self.branches = [ado_find_branch(self.project, self.repo, config_br)]
 
         # retrieve the older version of branch info from disk
         self.branches_backups = storage_obj_read(self.branches_backup_key, lock=True)
@@ -147,7 +132,7 @@ class Event_Branch_Commit_New(Event_Branch):
 
         # for each pull request currently active
         results = []
-        for br in self.filtered_branches():
+        for br in self.branches:
             # if the branch was *just* created, and we don't have a previous
             # record of it, ignore it
             if br.name not in self.branches_backups:
