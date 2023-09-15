@@ -98,6 +98,8 @@ enames = [
     "pr_comment_resolved",
     "pr_comment_unresolved",
     "branch_commit_new",
+    "wi_state_changed",
+    "wi_comment_new",
 ]
 for ename in enames:
     name = "DEBUG_EVENT_%s" % ename.upper()

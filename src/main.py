@@ -350,7 +350,7 @@ def main():
     else:
         # if NOTHING is given besides the config, show a nice intro screen
         help_intro()
-
+    
 # ------------------------------- Runner Code -------------------------------- #
 # Invoke the main routine
 if __name__ == "__main__":

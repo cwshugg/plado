@@ -21,6 +21,7 @@ from events.event_queue import EventQueue
 from events.event_thread import EventThread
 from events.events_pr import *
 from events.events_branch import *
+from events.events_wi import *
 from debug import dbg_print
 from utils.utils import *
 from utils.colors import *
@@ -43,36 +44,23 @@ event_classes = { # map of type names to classes
     "pr_comment_resolved":      [Event_PR_Comment_Resolved, EventConfig_PR_Comment_Resolved],
     "pr_comment_unresolved":    [Event_PR_Comment_Unresolved, EventConfig_PR_Comment_Unresolved],
     "branch_commit_new":        [Event_Branch_Commit_New, EventConfig_Branch_Commit_New],
+    "wi_state_changed":         [Event_WI_State_Changed, EventConfig_WI_State_Changed],
+    "wi_comment_new":           [Event_WI_Comment_New, EventConfig_WI_Comment_New],
 }
 events = []
-events_total_time = 0       # global number of seconds passed
 events_trigger_count = 0    # global number of triggered events
 event_threads = []          # global list of event threads
 event_queue = None          # global event queue
-
-def em_kill_threads():
-    """
-    Notifies all event threads to shut down, then joins them all.
-    """
-    for et in event_threads:
-        et.kill()
-    event_queue.kill()
-    for et in event_threads:
-        et.join()
 
 def em_sigint_handler(sig, frame):
     """
     SIGINIT handler for graceful exits.
     """
-    dbg_print("event", "SIGINT detected. Halting all event threads.")
+    dbg_print("event", "SIGINT detected.")
 
-    # notify all event threads that it's time to stop
-    em_kill_threads()
-
-    print("\nMonitoring complete. %d event%s were triggered over %d seconds." %
+    print("\nMonitoring complete. %d event%s were triggered." %
           (events_trigger_count,
-           "" if events_trigger_count == 1 else "s",
-           events_total_time))
+           "" if events_trigger_count == 1 else "s",))
     sys.exit(0)
 
 
@@ -170,8 +158,6 @@ def em_main():
     event_threads = ethreads
     global events_trigger_count
     events_trigger_count = 0
-    global events_total_time
-    events_total_time = 0
 
     # install SIGINT (Ctrl-C) handler
     signal.signal(signal.SIGINT, em_sigint_handler)
@@ -203,5 +189,4 @@ def em_main():
         # amount of time
         storage_obj_write("em_last_poll", datetime.now(tz=timezone.utc))
         time.sleep(poll_rate)
-        events_total_time += poll_rate
 

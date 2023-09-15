@@ -22,6 +22,7 @@ from utils.utils import *
 from azure.devops.connection import Connection
 from azure.devops.v7_1.work.models import TeamContext
 from azure.devops.v7_1.git.models import GitQueryCommitsCriteria
+from azure.devops.v7_1.work_item_tracking.models import WorkItemBatchGetRequest
 from msrest.authentication import BasicAuthentication
 
 # Globals
@@ -353,6 +354,10 @@ def ado_backlog_get_workitems(proj, team, bl):
         if wi_links is not None:
             dbg_print("ado", "Found %d work item links for backlog \"%s%s%s\"." %
                       (len(wi_links), color("backlog"), bl.name, color("none")))
+        
+        # if no work item links were found, return an empty list
+        if len(wi_links) == 0:
+            return []
 
         # next, create an array of IDs from the results of the first, then
         ids = [wi.target.id for wi in wi_links]
@@ -364,6 +369,48 @@ def ado_backlog_get_workitems(proj, team, bl):
     except Exception as e:
         panic("Failed to retrieve work items from backlog \"%s%s%s\"." %
               (color("backlog"), bl.name, color("none")), exception=e)
+
+def ado_team_get_workitems(proj, team):
+    """
+    Retrieves ALL work items in ALL backlogs for the given team.
+    """
+    result = []
+    bls = ado_team_get_backlogs(proj, team)
+    for bl in bls:
+        try:
+            result += ado_backlog_get_workitems(proj, team, bl)
+        except:
+            pass
+    return result
+
+def ado_project_get_workitems(proj):
+    """
+    Retrieves ALL work items in ALL backlogs for ALL teams.
+    """
+    result = []
+    teams = ado_project_get_teams()
+    for team in teams:
+        result += ado_team_get_workitems(proj, team)
+    
+    dbg_print("ado", "Retrieved a total of %d work items for %d teams in "
+              "project %s%s%s." %
+              (len(wis), len(teams),
+               color("project"), proj.name, color("none")))
+    return result
+
+def ado_project_get_workitems_by_id(proj, ids):
+    """
+    Retrieves the work items specified by the 'ids' input.
+    """
+    cwit = ado_client_work_item_tracking()
+    try:
+        wis = cwit.get_work_items(ids, project=proj.id)
+        if wis is not None:
+            dbg_print("ado", "Found %d work items for the given IDs.",
+                      len(wis))
+        return wis
+    except Exception as e:
+        panic("Failed to retrieve work items.", exception=e)
 
 
 # ================================= Features ================================= #

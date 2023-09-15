@@ -24,7 +24,7 @@ bullet_char = "•"
 
 
 # ============================== Error Handling ============================== #
-def panic(msg: str, exception=None):
+def panic(msg: str, exception=None, exit=True):
     """
     Writes a message to stderr, prefixed to indicate a fatal error, then exits.
     If an exception is given, the message and stacktrace is printed.
@@ -42,7 +42,8 @@ def panic(msg: str, exception=None):
             for line in tb.split("\n"):
                 if len(line) > 0:
                     sys.stderr.write("%s %s%s%s\n" % (pfx, color("gray"), line, color("none")))
-    sys.exit(1)
+    if exit:
+        sys.exit(1)
 
 
 # ================================= Printing ================================= #
