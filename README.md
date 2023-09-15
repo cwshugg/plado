@@ -52,10 +52,6 @@ python3 src/main.py -c ./my_config.json -m
     * Write markdown documentation
     * Write Linux man page
     * Example config file(s)
-* Information retrieval
-    * When displaying a team, display all of its members (use the core client's
-      `get_team_members_with_extended_properties()` function)
-    * Add `-u`/`--user` to display user IDs
 * Polling optimization
     * Modify `Event_PR` and `Event_Branch` to poll only for the specified
       PR/branch when the user specifies a single PR/branch-of-interest

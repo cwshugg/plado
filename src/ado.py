@@ -238,15 +238,6 @@ def ado_repo_get_commits(proj, repo, search_criteria=None):
         panic("Failed to retrieve commits from repo %s%s%s." %
               (color("repo"), repo.name, color("none")), exception=e)
 
-def ado_branch_get_commits(proj, repo, branch):
-    """
-    Takes in a project, repo, and branch, and retrieves a list of all commits
-    for that branch.
-    """
-    # TODO
-    pass
-
-
 def ado_repo_get_pullreqs(proj, repo):
     """
     Takes in a project and repo and returns a list of all pull requests.
@@ -315,6 +306,20 @@ def ado_team_get_backlogs(proj, team):
         panic("Failed to retrieve backlogs from team %s%s%s." %
               (color("team"), team.name, color("none")), exception=e)
 
+def ado_team_get_members(proj, team):
+    """
+    Takes in a team and retrieves its members.
+    """
+    cc = ado_client_core()
+    try:
+        mbrs = cc.get_team_members_with_extended_properties(proj.id, team.id)
+        if mbrs is not None:
+            dbg_print("ado", "Found %d members for team %s%s%s." %
+                      (len(mbrs), color("team"), team.name, color("none")))
+        return mbrs
+    except Exception as e:
+        panic("Failed to retrieve members from team %s%s%s." %
+              (color("team"), team.name, color("none")), exception=e)
 
 # ================================= Features ================================= #
 def ado_list_projects():
@@ -539,6 +544,23 @@ def ado_show_team(proj, team):
     print("%sDescription:%s %s%s%s" %
           (color("gray"), color("none"),
            color("none"), desc, color("none")))
+
+    # print the team's member count
+    members = ado_team_get_members(proj, team)
+    members_len = len(members)
+    print("%sTeam Members:%s %d member%s" %
+          (color("gray"), color("none"),
+           members_len,
+           "" if members_len == 1 else "s"))
+    
+    # list the team members
+    for mbr in members:
+        user = mbr.identity
+        print("%s%s%s%s - %s%s%s - %s%s%s" %
+              (str_tab(bullet=bullet_char),
+               color("user_displayname"), user.display_name, color("none"),
+               color("user_uniquename"), user.unique_name, color("none"),
+               color("user_id"), user.id, color("none")))
 
 def ado_list_backlogs(proj, team):
     """
